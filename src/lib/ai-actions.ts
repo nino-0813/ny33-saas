@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCheckRealData, getMeasuredResult } from "@/lib/checks-data";
-import { generateCheckDiagnosis, hasAnthropicKey } from "@/lib/ai/diagnose";
+import { generateCheckDiagnosis, hasOpenAIKey } from "@/lib/ai/diagnose";
 import { getCheck, checkDetails, type SubMetric } from "@/lib/webdock";
 import type { Json as DbJson } from "@/lib/database.types";
 
@@ -22,9 +22,9 @@ export async function generateDiagnosisAction(
   const detail = checkDetails[checkKey];
   if (!check || !detail) return { error: "不正なチェックです" };
 
-  if (!hasAnthropicKey()) {
+  if (!hasOpenAIKey()) {
     return {
-      error: "AI連携が未設定です（ANTHROPIC_API_KEY を設定してください）。",
+      error: "AI連携が未設定です（OPENAI_API_KEY を設定してください）。",
     };
   }
 
