@@ -1,36 +1,94 @@
-import { Plug, Plus, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
+import { Plug, Plus, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 import { redirect } from "next/navigation";
 import { PageHeader, Card, SectionTitle } from "@/components/ui";
 import DataSources from "@/components/DataSources";
+import SyncButton from "@/components/SyncButton";
+import SourceConnectForm from "@/components/SourceConnectForm";
 import { availableSources, syncHistory } from "@/lib/mock";
 import { getDashboardData } from "@/lib/queries";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "データ連携 — NY33 Company Dock" };
+
+type Json = Record<string, unknown>;
 
 export default async function SourcesPage() {
   const data = await getDashboardData();
   if (!data) redirect("/onboarding");
   const connectedCount = data.dataSources.length;
 
+  // GA4 / GSC の設定値（プロパティID・サイトURL・前回エラー）をプリフィル用に取得
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: company } = await supabase
+    .from("companies")
+    .select("id, website_url")
+    .eq("owner_id", user!.id)
+    .maybeSingle();
+  const { data: srcRows } = await supabase
+    .from("data_sources")
+    .select("source_key, config")
+    .eq("company_id", company!.id);
+
+  const configBy = new Map<string, Json>(
+    (srcRows ?? []).map((r) => [r.source_key, (r.config as Json) ?? {}]),
+  );
+  const ga4Cfg = configBy.get("ga4") ?? {};
+  const gscCfg = configBy.get("gsc") ?? {};
+  const str = (v: unknown) => (v == null ? undefined : String(v));
+
   return (
     <div className="space-y-8">
       <PageHeader
         icon={<Plug className="h-5 w-5" />}
         title="データ連携"
-        description="各サービスを接続すると、毎朝データが自動取得され、ダッシュボードと会社カルテに反映されます。"
-        action={
-          <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-primary/90">
-            <RefreshCw className="h-4 w-4" />
-            今すぐ同期
-          </button>
-        }
+        description="GA4・Search Console を接続すると、実際の数値を取得してダッシュボードに反映します。"
+        action={<SyncButton />}
       />
+
+      {/* Google 連携（実データ） */}
+      <section>
+        <SectionTitle
+          title="Google 連携（実データ取得）"
+          subtitle="サービスアカウントに閲覧権限を付与し、GA4 はプロパティID（数値）、Search Console はサイトURLを設定してください。"
+          action={
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+              <Zap className="h-3.5 w-3.5" />
+              実データ
+            </span>
+          }
+        />
+        <div className="grid gap-3 lg:grid-cols-2">
+          <SourceConnectForm
+            sourceKey="ga4"
+            title="Google Analytics 4"
+            fieldName="propertyId"
+            label="プロパティID（数値・例: 123456789）"
+            placeholder="123456789"
+            help="GA4 管理 → プロパティ設定 で確認。測定ID（G-XXXX）ではありません。"
+            currentValue={str(ga4Cfg.propertyId)}
+            lastError={str(ga4Cfg.lastError)}
+          />
+          <SourceConnectForm
+            sourceKey="gsc"
+            title="Search Console"
+            fieldName="siteUrl"
+            label="サイトURL（例: https://example.com/ または sc-domain:example.com）"
+            placeholder={company?.website_url || "https://example.com/"}
+            help="Search Console のプロパティと完全一致させてください（末尾スラッシュ含む）。"
+            currentValue={str(gscCfg.siteUrl ?? gscCfg.value)}
+            lastError={str(gscCfg.lastError)}
+          />
+        </div>
+      </section>
 
       {/* 連携中 */}
       <section>
         <SectionTitle
           title="連携中のサービス"
-          subtitle={`${connectedCount}件のデータソースが接続されています`}
+          subtitle={`${connectedCount}件のデータソース・「今すぐ同期」で最新化`}
         />
         <DataSources sources={data.dataSources} showHeader={false} />
       </section>

@@ -53,8 +53,8 @@ const SOURCE_FIELDS: SourceField[] = [
     name: "Google Analytics 4（アクセス解析）",
     icon: BarChart3,
     desc: "サイトのPV・訪問者数・コンバージョンを取得します。",
-    placeholder: "測定ID（例: G-XXXXXXXXXX）",
-    help: "GA4管理画面 > 管理 > データストリーム で確認できます。",
+    placeholder: "プロパティID（数値・例: 123456789）",
+    help: "GA4 管理 > プロパティ設定 で確認。測定ID（G-XXXX）ではありません。後から設定もできます。",
   },
   {
     field: "gbp",

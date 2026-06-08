@@ -110,16 +110,22 @@ export async function completeOnboarding(
 
   // データ連携ソース（入力があれば連携中、無ければ未連携）
   const sources = SOURCE_DEFS.map((d, i) => {
-    const value =
-      d.field === "site_url" ? websiteUrl : str(d.field);
+    const value = d.field === "site_url" ? websiteUrl : str(d.field);
     const connected = value.length > 0;
+    // ソースごとに config のキー名を合わせる（同期処理が参照する）
+    let config: Record<string, string> = {};
+    if (value) {
+      if (d.key === "ga4") config = { propertyId: value.replace(/[^0-9]/g, "") };
+      else if (d.key === "gsc") config = { siteUrl: value };
+      else config = { value };
+    }
     return {
       company_id: companyId,
       source_key: d.key,
       name: d.name,
       status: connected ? "connected" : "disconnected",
       metrics: connected ? d.metrics : [],
-      config: value ? { value } : {},
+      config,
       last_sync: connected ? new Date().toISOString() : null,
       sort: i,
     };
