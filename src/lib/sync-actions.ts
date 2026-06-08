@@ -9,6 +9,8 @@ import {
 } from "@/lib/google/oauth";
 import { fetchGa4Summary } from "@/lib/google/ga4";
 import { fetchSearchConsoleSummary } from "@/lib/google/searchConsole";
+import { scoreGa4, scoreGsc } from "@/lib/measure/score";
+import { statusFromScore } from "@/lib/measure/shared";
 import type { Json as DbJson } from "@/lib/database.types";
 
 export interface SyncOutcome {
@@ -59,6 +61,8 @@ async function syncOne(
   try {
     let metrics: { label: string; value: string }[];
     const config: Cfg = { ...row.config };
+    // 実データから算出するチェックスコア（ga4→access, gsc→seo）
+    let derived: { checkKey: string; score: number; note: string } | null = null;
 
     if (row.source_key === "ga4") {
       const propertyId = String(row.config.propertyId ?? "").trim();
@@ -72,6 +76,7 @@ async function syncOne(
         { label: "CV", value: s.cv.toLocaleString("ja-JP") },
       ];
       config.raw = s;
+      derived = { checkKey: "access", score: scoreGa4(s), note: "GA4 の実データから算出" };
     } else if (row.source_key === "gsc") {
       const siteUrl = String(row.config.siteUrl ?? row.config.value ?? "").trim();
       if (!siteUrl) {
@@ -83,24 +88,43 @@ async function syncOne(
         { label: "CTR", value: `${s.ctr}%` },
       ];
       config.raw = s;
+      derived = { checkKey: "seo", score: scoreGsc(s), note: "Search Console の実データから算出" };
     } else {
       return { ...base, ok: false, message: "未対応のソースです" };
     }
 
     config.lastError = null;
+    const now = new Date().toISOString();
 
     const { error } = await supabase
       .from("data_sources")
       .update({
         metrics,
         status: "connected",
-        last_sync: new Date().toISOString(),
+        last_sync: now,
         config: config as DbJson,
       })
       .eq("company_id", companyId)
       .eq("source_key", row.source_key);
 
     if (error) return { ...base, ok: false, message: "保存に失敗しました" };
+
+    // 実データからチェックスコアを check_results に保存（ダッシュボード/一覧/詳細へ反映）
+    if (derived) {
+      await supabase.from("check_results").upsert(
+        {
+          company_id: companyId,
+          check_key: derived.checkKey,
+          score: derived.score,
+          status: statusFromScore(derived.score),
+          metrics: metrics as unknown as DbJson,
+          note: derived.note,
+          measured_at: now,
+        },
+        { onConflict: "company_id,check_key" },
+      );
+    }
+
     return { ...base, ok: true, message: "同期しました" };
   } catch (e) {
     const message = e instanceof Error ? e.message : "取得に失敗しました";
@@ -225,6 +249,12 @@ export async function disconnectGoogleAction(): Promise<void> {
       .eq("company_id", companyId)
       .eq("source_key", key);
   }
+  // 実データから算出したスコアも削除（サンプル表示に戻す）
+  await supabase
+    .from("check_results")
+    .delete()
+    .eq("company_id", companyId)
+    .in("check_key", ["access", "seo"]);
   revalidatePath("/sources");
   revalidatePath("/");
 }
