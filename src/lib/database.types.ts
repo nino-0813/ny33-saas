@@ -61,6 +61,50 @@ export type Database = {
           },
         ]
       }
+      ai_diagnoses: {
+        Row: {
+          actions: Json
+          check_key: string
+          company_id: string
+          created_at: string
+          good_points: Json
+          id: string
+          improve_points: Json
+          model: string
+          summary: string
+        }
+        Insert: {
+          actions?: Json
+          check_key: string
+          company_id: string
+          created_at?: string
+          good_points?: Json
+          id?: string
+          improve_points?: Json
+          model?: string
+          summary?: string
+        }
+        Update: {
+          actions?: Json
+          check_key?: string
+          company_id?: string
+          created_at?: string
+          good_points?: Json
+          id?: string
+          improve_points?: Json
+          model?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_diagnoses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_results: {
         Row: {
           check_key: string

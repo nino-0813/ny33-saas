@@ -1,15 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Lightbulb, ArrowRight, Zap, Gauge } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lightbulb, ArrowRight, Zap, Gauge, Sparkles } from "lucide-react";
 import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
 import CheckSettingsForm from "@/components/checks/CheckSettingsForm";
 import RecheckButton from "@/components/checks/RecheckButton";
+import AiDiagnoseButton from "@/components/checks/AiDiagnoseButton";
 import { CHECK_ICONS } from "@/components/checks/icons";
 import { Delta, StatusBadge } from "@/components/checks/bits";
 import { createClient } from "@/lib/supabase/server";
 import {
   getCheckRealData,
   getMeasuredResult,
+  getAiDiagnosis,
   type CheckRealData,
 } from "@/lib/checks-data";
 import { MEASURABLE } from "@/lib/measure/shared";
@@ -89,6 +91,15 @@ export default async function CheckDetailPage({
   const displayStatus = measured?.status ?? check.status;
   const measurable = MEASURABLE.has(id);
 
+  // AI診断（あれば AI生成の所見、無ければサンプルの定型文）
+  const ai = company ? await getAiDiagnosis(company.id, id) : null;
+  const diag = ai ?? {
+    summary: detail.summary,
+    goodPoints: detail.goodPoints,
+    improvePoints: detail.improvePoints,
+    actions: detail.actions,
+  };
+
   return (
     <div className="space-y-5">
       {/* 戻る */}
@@ -142,9 +153,25 @@ export default async function CheckDetailPage({
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
         {/* 左 */}
         <div className="space-y-5 xl:col-span-2">
-          {/* サマリー */}
+          {/* サマリー（AI診断） */}
           <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-            <p className="text-sm leading-relaxed text-foreground">{detail.summary}</p>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold text-foreground">所見</h2>
+                {ai ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-600">
+                    <Sparkles className="h-3 w-3" />
+                    AI生成{ai.createdAt ? `・${ai.createdAt}` : ""}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-muted">
+                    サンプル
+                  </span>
+                )}
+              </div>
+              <AiDiagnoseButton checkKey={id} hasDiagnosis={Boolean(ai)} />
+            </div>
+            <p className="text-sm leading-relaxed text-foreground">{diag.summary}</p>
           </div>
 
           {/* 推移 */}
@@ -193,10 +220,10 @@ export default async function CheckDetailPage({
             <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
               <h3 className="mb-3 text-sm font-bold text-good">良い点</h3>
               <ul className="space-y-2">
-                {detail.goodPoints.length === 0 && (
+                {diag.goodPoints.length === 0 && (
                   <li className="text-xs text-muted">特になし</li>
                 )}
-                {detail.goodPoints.map((p, i) => (
+                {diag.goodPoints.map((p, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-foreground">
                     <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-good" />
                     {p}
@@ -207,10 +234,10 @@ export default async function CheckDetailPage({
             <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
               <h3 className="mb-3 text-sm font-bold text-warn">改善点</h3>
               <ul className="space-y-2">
-                {detail.improvePoints.length === 0 && (
+                {diag.improvePoints.length === 0 && (
                   <li className="text-xs text-muted">改善点はありません 🎉</li>
                 )}
-                {detail.improvePoints.map((p, i) => (
+                {diag.improvePoints.map((p, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-foreground">
                     <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-warn" />
                     {p}
@@ -221,11 +248,11 @@ export default async function CheckDetailPage({
           </div>
 
           {/* おすすめアクション */}
-          {detail.actions.length > 0 && (
+          {diag.actions.length > 0 && (
             <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
               <h2 className="mb-3 text-base font-bold text-foreground">おすすめアクション</h2>
               <ul className="space-y-2.5">
-                {detail.actions.map((a, i) => {
+                {diag.actions.map((a, i) => {
                   const meta = PRIORITY_META[a.priority];
                   return (
                     <li

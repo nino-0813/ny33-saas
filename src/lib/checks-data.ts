@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { CheckStatus, SubMetric } from "@/lib/webdock";
+import type { CheckStatus, Priority, SubMetric } from "@/lib/webdock";
 
 /** チェック → 実データのソース（連携済みなら実値を使う） */
 const SOURCE_BY_CHECK: Record<string, string> = {
@@ -95,6 +95,42 @@ export async function getMeasuredResult(
 }
 
 export type MeasuredMap = Map<string, { score: number; status: CheckStatus }>;
+
+/* ============================================================
+ * AI診断（ai_diagnoses テーブル）
+ * ========================================================== */
+
+export interface AiDiagnosis {
+  summary: string;
+  goodPoints: string[];
+  improvePoints: string[];
+  actions: { text: string; priority: Priority }[];
+  model: string;
+  createdAt: string | null;
+}
+
+export async function getAiDiagnosis(
+  companyId: string,
+  checkId: string,
+): Promise<AiDiagnosis | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("ai_diagnoses")
+    .select("summary, good_points, improve_points, actions, model, created_at")
+    .eq("company_id", companyId)
+    .eq("check_key", checkId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    summary: data.summary,
+    goodPoints: (data.good_points as unknown as string[]) ?? [],
+    improvePoints: (data.improve_points as unknown as string[]) ?? [],
+    actions:
+      (data.actions as unknown as { text: string; priority: Priority }[]) ?? [],
+    model: data.model,
+    createdAt: fmtSync(data.created_at),
+  };
+}
 
 /** 全チェックの実測スコア/状態マップ（一覧の上書き用・ログイン会社を解決） */
 export async function getMeasuredMap(): Promise<MeasuredMap> {
