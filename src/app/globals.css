@@ -1,26 +1,90 @@
 @import "tailwindcss";
 
+/*
+  NY33 Company Dock — Design Tokens
+  Style: UXBooster — warm desk + cream canvas, white cards,
+         emerald / orange / yellow accents, Geist font
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --desk: #c5c3d1;
+  --canvas: #f5f4f0;
+  --background: #c5c3d1;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --foreground: #0a0a0a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+
+  --navy: #0a0a0a; /* black pills */
+  --primary: #10b981; /* emerald */
+  --primary-weak: #d1fae5;
+  --accent: #f97316; /* orange */
+  --accent-weak: #ffedd5;
+
+  --good: #10b981;
+  --good-weak: #d1fae5;
+  --warn: #ca8a04;
+  --warn-weak: #fef9c3;
+  --bad: #f97316;
+  --bad-weak: #ffedd5;
 }
 
 @theme inline {
+  --color-desk: var(--desk);
+  --color-canvas: var(--canvas);
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+
+  --color-navy: var(--navy);
+  --color-primary: var(--primary);
+  --color-primary-weak: var(--primary-weak);
+  --color-accent: var(--accent);
+  --color-accent-weak: var(--accent-weak);
+
+  --color-good: var(--good);
+  --color-good-weak: var(--good-weak);
+  --color-warn: var(--warn);
+  --color-warn-weak: var(--warn-weak);
+  --color-bad: var(--bad);
+  --color-bad-weak: var(--bad-weak);
+
+  --font-sans: var(--font-geist), var(--font-sans-app), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist), var(--font-sans-app), "Hiragino Sans",
+    "Noto Sans JP", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Tabular figures for data/number alignment */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* UXBooster 風ダッシュボード専用フォント（Geist + 日本語フォールバック） */
+.font-uxb {
+  font-family: var(--font-geist), var(--font-sans-app), "Hiragino Sans",
+    "Noto Sans JP", sans-serif;
+}
+.font-uxb-mono {
+  font-family: var(--font-geist-mono), var(--font-geist), monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
