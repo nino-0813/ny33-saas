@@ -99,7 +99,7 @@ export default function OnboardingWizard() {
           <Anchor className="h-6 w-6 text-white" strokeWidth={2} />
         </div>
         <h1 className="mt-4 text-xl font-bold text-foreground">
-          NY33 Company Dock へようこそ
+          Webドック へようこそ
         </h1>
         <p className="mt-1 text-sm text-muted">
           まずは初期設定をしましょう。あとから変更・追加もできます。
@@ -203,7 +203,7 @@ export default function OnboardingWizard() {
           <Section
             icon={<Plug className="h-5 w-5" />}
             title="データ連携の設定"
-            desc="わかる範囲で入力してください。空欄のままスキップしてもOK。後から「データ連携」画面で設定・サポートを受けられます。"
+            desc="ここはすべて空欄でOK。GA4・Search Console は登録後に『データ連携』画面の「Google で連携」ボタンからワンクリックで接続できます（IDの手入力は不要）。LINE 等は補足としてメモできます。"
           >
             <div className="space-y-3">
               {SOURCE_FIELDS.map((s) => {

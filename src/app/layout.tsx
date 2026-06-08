@@ -23,9 +23,9 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "NY33 Company Dock — 会社の定期健康診断プラットフォーム",
+  title: "Webドック — あなたのWeb健康診断",
   description:
-    "地方企業の利益を増やす。売上・SEO・MEO・SNS・LINEを一元化し、会社健康度をスコア化。AIが改善を提案します。",
+    "アクセス・SEO・MEO・SNS・表示速度・セキュリティなど、Webの健康状態を毎日チェック。スコア化して改善を提案します。",
 };
 
 export default function RootLayout({

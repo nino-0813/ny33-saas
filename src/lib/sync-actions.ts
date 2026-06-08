@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { hasGoogleCredentials } from "@/lib/google/auth";
+import {
+  getAccessTokenForCompany,
+  hasOAuthConfig,
+  deleteConnection,
+} from "@/lib/google/oauth";
 import { fetchGa4Summary } from "@/lib/google/ga4";
 import { fetchSearchConsoleSummary } from "@/lib/google/searchConsole";
 import type { Json as DbJson } from "@/lib/database.types";
@@ -21,7 +25,7 @@ export interface SyncState {
 }
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
-type Json = Record<string, unknown>;
+type Cfg = Record<string, unknown>;
 
 const SYNCABLE = new Set(["ga4", "gsc"]);
 
@@ -41,26 +45,27 @@ async function getCompanyId(supabase: Supabase): Promise<string | null> {
 interface SourceRow {
   source_key: string;
   name: string;
-  config: Json;
+  config: Cfg;
 }
 
-/** 1ソース分の同期（取得→data_sources 更新）。失敗してもthrowせず outcome を返す */
+/** 1ソース分の同期（失敗してもthrowせず outcome を返す） */
 async function syncOne(
   supabase: Supabase,
   companyId: string,
+  accessToken: string,
   row: SourceRow,
 ): Promise<SyncOutcome> {
   const base = { sourceKey: row.source_key, name: row.name };
   try {
     let metrics: { label: string; value: string }[];
-    const config: Json = { ...row.config };
+    const config: Cfg = { ...row.config };
 
     if (row.source_key === "ga4") {
       const propertyId = String(row.config.propertyId ?? "").trim();
       if (!propertyId) {
-        return { ...base, ok: false, message: "GA4 プロパティID（数値）を設定してください" };
+        return { ...base, ok: false, message: "GA4 プロパティを選択してください" };
       }
-      const s = await fetchGa4Summary(propertyId);
+      const s = await fetchGa4Summary(accessToken, propertyId);
       metrics = [
         { label: "PV", value: s.pv.toLocaleString("ja-JP") },
         { label: "UU", value: s.uu.toLocaleString("ja-JP") },
@@ -70,16 +75,16 @@ async function syncOne(
     } else if (row.source_key === "gsc") {
       const siteUrl = String(row.config.siteUrl ?? row.config.value ?? "").trim();
       if (!siteUrl) {
-        return { ...base, ok: false, message: "Search Console のサイトURLを設定してください" };
+        return { ...base, ok: false, message: "Search Console のサイトを選択してください" };
       }
-      const s = await fetchSearchConsoleSummary(siteUrl);
+      const s = await fetchSearchConsoleSummary(accessToken, siteUrl);
       metrics = [
         { label: "検索順位", value: s.position.toFixed(1) },
         { label: "CTR", value: `${s.ctr}%` },
       ];
       config.raw = s;
     } else {
-      return { ...base, ok: false, message: "このソースはまだ自動取得に対応していません" };
+      return { ...base, ok: false, message: "未対応のソースです" };
     }
 
     config.lastError = null;
@@ -95,13 +100,10 @@ async function syncOne(
       .eq("company_id", companyId)
       .eq("source_key", row.source_key);
 
-    if (error) {
-      return { ...base, ok: false, message: "保存に失敗しました" };
-    }
+    if (error) return { ...base, ok: false, message: "保存に失敗しました" };
     return { ...base, ok: true, message: "同期しました" };
   } catch (e) {
     const message = e instanceof Error ? e.message : "取得に失敗しました";
-    // エラーを config に記録（ステータスは保持）
     await supabase
       .from("data_sources")
       .update({ config: { ...row.config, lastError: message } as DbJson })
@@ -116,17 +118,21 @@ export async function syncAllAction(
   _prev: SyncState,
   _formData: FormData,
 ): Promise<SyncState> {
-  if (!hasGoogleCredentials()) {
+  if (!hasOAuthConfig()) {
     return {
       ran: false,
-      error:
-        "Google サービスアカウントの認証情報が未設定です。.env.local に GOOGLE_SERVICE_ACCOUNT_EMAIL / GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY を設定してください。",
+      error: "Google 連携が未設定です（運営側の設定をご確認ください）。",
     };
   }
 
   const supabase = await createClient();
   const companyId = await getCompanyId(supabase);
   if (!companyId) return { ran: false, error: "ログインが必要です" };
+
+  const accessToken = await getAccessTokenForCompany(companyId);
+  if (!accessToken) {
+    return { ran: false, error: "Google と連携してください。" };
+  }
 
   const { data: rows } = await supabase
     .from("data_sources")
@@ -138,10 +144,10 @@ export async function syncAllAction(
   const outcomes: SyncOutcome[] = [];
   for (const r of targets) {
     outcomes.push(
-      await syncOne(supabase, companyId, {
+      await syncOne(supabase, companyId, accessToken, {
         source_key: r.source_key,
         name: r.name,
-        config: (r.config as Json) ?? {},
+        config: (r.config as Cfg) ?? {},
       }),
     );
   }
@@ -151,8 +157,8 @@ export async function syncAllAction(
   return { ran: true, outcomes };
 }
 
-/** GA4 プロパティID / GSC サイトURL を保存して即同期 */
-export async function saveAndSyncAction(
+/** ドロップダウンで選んだ GA4 プロパティ / GSC サイトを保存して即同期 */
+export async function selectAndSyncAction(
   _prev: SyncState,
   formData: FormData,
 ): Promise<SyncState> {
@@ -171,16 +177,11 @@ export async function saveAndSyncAction(
     .maybeSingle();
   if (!row) return { ran: false, error: "ソースが見つかりません" };
 
-  const config: Json = { ...((row.config as Json) ?? {}) };
-  if (sourceKey === "ga4") {
-    const propertyId = String(formData.get("propertyId") ?? "").replace(/[^0-9]/g, "");
-    if (!propertyId) return { ran: false, error: "プロパティID（数値）を入力してください" };
-    config.propertyId = propertyId;
-  } else if (sourceKey === "gsc") {
-    const siteUrl = String(formData.get("siteUrl") ?? "").trim();
-    if (!siteUrl) return { ran: false, error: "サイトURLを入力してください" };
-    config.siteUrl = siteUrl;
-  }
+  const config: Cfg = { ...((row.config as Cfg) ?? {}) };
+  const value = String(formData.get("value") ?? "").trim();
+  if (!value) return { ran: false, error: "項目を選択してください" };
+  if (sourceKey === "ga4") config.propertyId = value.replace(/[^0-9]/g, "");
+  else config.siteUrl = value;
 
   await supabase
     .from("data_sources")
@@ -188,22 +189,17 @@ export async function saveAndSyncAction(
     .eq("company_id", companyId)
     .eq("source_key", sourceKey);
 
-  if (!hasGoogleCredentials()) {
+  const accessToken = await getAccessTokenForCompany(companyId);
+  if (!accessToken) {
     return {
       ran: true,
       outcomes: [
-        {
-          sourceKey,
-          name: String(row.name),
-          ok: false,
-          message:
-            "設定を保存しました。Google 認証情報（.env.local）を設定すると同期できます。",
-        },
+        { sourceKey, name: String(row.name), ok: false, message: "Google と連携してください。" },
       ],
     };
   }
 
-  const outcome = await syncOne(supabase, companyId, {
+  const outcome = await syncOne(supabase, companyId, accessToken, {
     source_key: sourceKey,
     name: String(row.name),
     config,
@@ -214,7 +210,21 @@ export async function saveAndSyncAction(
   return { ran: true, outcomes: [outcome] };
 }
 
-// 認証情報の有無をクライアントへ伝えるためのヘルパー（Server Action として呼べる）
-export async function checkGoogleCredentials(): Promise<boolean> {
-  return hasGoogleCredentials();
+/** Google 連携を解除 */
+export async function disconnectGoogleAction(): Promise<void> {
+  const supabase = await createClient();
+  const companyId = await getCompanyId(supabase);
+  if (!companyId) return;
+
+  await deleteConnection(companyId);
+  // GA4 / GSC のステータスと取得値をリセット
+  for (const key of ["ga4", "gsc"]) {
+    await supabase
+      .from("data_sources")
+      .update({ status: "disconnected", metrics: [], config: {} as DbJson, last_sync: null })
+      .eq("company_id", companyId)
+      .eq("source_key", key);
+  }
+  revalidatePath("/sources");
+  revalidatePath("/");
 }

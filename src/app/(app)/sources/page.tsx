@@ -1,58 +1,130 @@
-import { Plug, Plus, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
+import {
+  Plug,
+  Plus,
+  CheckCircle2,
+  AlertTriangle,
+  Zap,
+  LogIn,
+  Link2Off,
+} from "lucide-react";
 import { redirect } from "next/navigation";
 import { PageHeader, Card, SectionTitle } from "@/components/ui";
 import DataSources from "@/components/DataSources";
 import SyncButton from "@/components/SyncButton";
-import SourceConnectForm from "@/components/SourceConnectForm";
+import GoogleSourceSelect, {
+  type SelectOption,
+} from "@/components/GoogleSourceSelect";
 import { availableSources, syncHistory } from "@/lib/mock";
 import { getDashboardData } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
+import {
+  getConnection,
+  getAccessTokenForCompany,
+  hasOAuthConfig,
+} from "@/lib/google/oauth";
+import { listGa4Properties } from "@/lib/google/ga4";
+import { listSearchConsoleSites } from "@/lib/google/searchConsole";
+import { disconnectGoogleAction } from "@/lib/sync-actions";
 
 export const metadata = { title: "データ連携 — NY33 Company Dock" };
 
 type Json = Record<string, unknown>;
 
-export default async function SourcesPage() {
+const STATUS_MSG: Record<string, { ok: boolean; text: string }> = {
+  connected: { ok: true, text: "Google と連携しました。プロパティ／サイトを選んで同期してください。" },
+  denied: { ok: false, text: "連携がキャンセルされました。" },
+  invalid: { ok: false, text: "連携に失敗しました（不正なリクエスト）。" },
+  error: { ok: false, text: "連携に失敗しました。時間をおいて再度お試しください。" },
+  norefresh: { ok: false, text: "再連携が必要です。一度「連携解除」してからやり直してください。" },
+  unconfigured: { ok: false, text: "Google 連携が未設定です（運営側の設定が必要です）。" },
+};
+
+export default async function SourcesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ google?: string }>;
+}) {
   const data = await getDashboardData();
   if (!data) redirect("/onboarding");
-  const connectedCount = data.dataSources.length;
+  const { google: googleStatus } = await searchParams;
 
-  // GA4 / GSC の設定値（プロパティID・サイトURL・前回エラー）をプリフィル用に取得
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const { data: company } = await supabase
     .from("companies")
-    .select("id, website_url")
+    .select("id")
     .eq("owner_id", user!.id)
     .maybeSingle();
+  const companyId = company!.id;
+
+  const connection = await getConnection(companyId);
+
+  // 設定値（選択済みプロパティ/サイト・前回エラー）
   const { data: srcRows } = await supabase
     .from("data_sources")
     .select("source_key, config")
-    .eq("company_id", company!.id);
-
-  const configBy = new Map<string, Json>(
+    .eq("company_id", companyId);
+  const cfgBy = new Map<string, Json>(
     (srcRows ?? []).map((r) => [r.source_key, (r.config as Json) ?? {}]),
   );
-  const ga4Cfg = configBy.get("ga4") ?? {};
-  const gscCfg = configBy.get("gsc") ?? {};
+  const ga4Cfg = cfgBy.get("ga4") ?? {};
+  const gscCfg = cfgBy.get("gsc") ?? {};
   const str = (v: unknown) => (v == null ? undefined : String(v));
+
+  // 連携済みなら GA4 プロパティ / GSC サイト一覧を取得
+  let ga4Options: SelectOption[] = [];
+  let gscOptions: SelectOption[] = [];
+  let listError = "";
+  if (connection) {
+    try {
+      const token = await getAccessTokenForCompany(companyId);
+      if (token) {
+        const [props, sites] = await Promise.all([
+          listGa4Properties(token).catch(() => []),
+          listSearchConsoleSites(token).catch(() => []),
+        ]);
+        ga4Options = props.map((p) => ({ value: p.propertyId, label: p.label }));
+        gscOptions = sites.map((s) => ({ value: s.siteUrl, label: s.siteUrl }));
+      }
+    } catch {
+      listError = "一覧の取得に失敗しました。連携をやり直してください。";
+    }
+  }
 
   return (
     <div className="space-y-8">
       <PageHeader
         icon={<Plug className="h-5 w-5" />}
         title="データ連携"
-        description="GA4・Search Console を接続すると、実際の数値を取得してダッシュボードに反映します。"
+        description="Google アカウントで連携すると、GA4・Search Console の実データをダッシュボードに反映します。"
         action={<SyncButton />}
       />
 
-      {/* Google 連携（実データ） */}
+      {/* ステータス通知 */}
+      {googleStatus && STATUS_MSG[googleStatus] && (
+        <div
+          className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm ${
+            STATUS_MSG[googleStatus].ok
+              ? "bg-emerald-50 text-emerald-700"
+              : "bg-orange-50 text-orange-700"
+          }`}
+        >
+          {STATUS_MSG[googleStatus].ok ? (
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+          ) : (
+            <AlertTriangle className="h-5 w-5 shrink-0" />
+          )}
+          {STATUS_MSG[googleStatus].text}
+        </div>
+      )}
+
+      {/* Google 連携 */}
       <section>
         <SectionTitle
           title="Google 連携（実データ取得）"
-          subtitle="サービスアカウントに閲覧権限を付与し、GA4 はプロパティID（数値）、Search Console はサイトURLを設定してください。"
+          subtitle="GA4・Search Console をあなたの Google アカウントで連携します。"
           action={
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
               <Zap className="h-3.5 w-3.5" />
@@ -60,35 +132,79 @@ export default async function SourcesPage() {
             </span>
           }
         />
-        <div className="grid gap-3 lg:grid-cols-2">
-          <SourceConnectForm
-            sourceKey="ga4"
-            title="Google Analytics 4"
-            fieldName="propertyId"
-            label="プロパティID（数値・例: 123456789）"
-            placeholder="123456789"
-            help="GA4 管理 → プロパティ設定 で確認。測定ID（G-XXXX）ではありません。"
-            currentValue={str(ga4Cfg.propertyId)}
-            lastError={str(ga4Cfg.lastError)}
-          />
-          <SourceConnectForm
-            sourceKey="gsc"
-            title="Search Console"
-            fieldName="siteUrl"
-            label="サイトURL（例: https://example.com/ または sc-domain:example.com）"
-            placeholder={company?.website_url || "https://example.com/"}
-            help="Search Console のプロパティと完全一致させてください（末尾スラッシュ含む）。"
-            currentValue={str(gscCfg.siteUrl ?? gscCfg.value)}
-            lastError={str(gscCfg.lastError)}
-          />
-        </div>
+
+        {!connection ? (
+          <Card className="flex flex-col items-start gap-3 p-5">
+            <p className="text-sm text-foreground">
+              「Google で連携」を押すと、Google のログイン画面が開きます。許可すると、
+              <span className="font-semibold">自分のGA4プロパティ・サイトを一覧から選ぶ</span>
+              だけで実データが取得できます。
+            </p>
+            <a
+              href="/api/google/connect"
+              className="inline-flex items-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+            >
+              <LogIn className="h-4 w-4" />
+              Google で連携
+            </a>
+            {!hasOAuthConfig() && (
+              <p className="text-xs text-orange-600">
+                ※ 現在 Google 連携は未設定です（運営側の OAuth 設定が必要）。
+              </p>
+            )}
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            <Card className="flex items-center justify-between gap-3 p-4">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                <span className="text-foreground">
+                  連携済み:{" "}
+                  <span className="font-semibold">{connection.email || "Google アカウント"}</span>
+                </span>
+              </div>
+              <form action={disconnectGoogleAction}>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                >
+                  <Link2Off className="h-3.5 w-3.5" />
+                  連携解除
+                </button>
+              </form>
+            </Card>
+
+            {listError && (
+              <p className="text-xs text-orange-600">{listError}</p>
+            )}
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <GoogleSourceSelect
+                sourceKey="ga4"
+                title="Google Analytics 4（プロパティ）"
+                options={ga4Options}
+                currentValue={str(ga4Cfg.propertyId)}
+                lastError={str(ga4Cfg.lastError)}
+                emptyHint="アクセスできる GA4 プロパティが見つかりません。連携アカウントの権限をご確認ください。"
+              />
+              <GoogleSourceSelect
+                sourceKey="gsc"
+                title="Search Console（サイト）"
+                options={gscOptions}
+                currentValue={str(gscCfg.siteUrl)}
+                lastError={str(gscCfg.lastError)}
+                emptyHint="アクセスできるサイトが見つかりません。Search Console の登録をご確認ください。"
+              />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* 連携中 */}
       <section>
         <SectionTitle
           title="連携中のサービス"
-          subtitle={`${connectedCount}件のデータソース・「今すぐ同期」で最新化`}
+          subtitle="「今すぐ同期」で最新化されます"
         />
         <DataSources sources={data.dataSources} showHeader={false} />
       </section>

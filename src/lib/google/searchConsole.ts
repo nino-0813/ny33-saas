@@ -1,5 +1,4 @@
 import "server-only";
-import { getAccessToken, GSC_SCOPE } from "./auth";
 import { translateGoogleError } from "./ga4";
 
 export interface SearchConsoleSummary {
@@ -7,6 +6,11 @@ export interface SearchConsoleSummary {
   ctr: number; // クリック率（%）
   clicks: number;
   impressions: number;
+}
+
+export interface SearchConsoleSite {
+  siteUrl: string;
+  permissionLevel: string;
 }
 
 /** n日前（YYYY-MM-DD） */
@@ -17,27 +21,17 @@ function daysAgo(n: number): string {
 }
 
 interface SearchAnalyticsResponse {
-  rows?: {
-    clicks?: number;
-    impressions?: number;
-    ctr?: number;
-    position?: number;
-  }[];
+  rows?: { clicks?: number; impressions?: number; ctr?: number; position?: number }[];
   error?: { message?: string };
 }
 
-/**
- * Search Console API で直近28日（GSCは2-3日遅延があるため 3〜31日前）の
- * 平均順位 / CTR / クリック / 表示回数を取得。
- * siteUrl は "https://example.com/" もしくは "sc-domain:example.com"。
- */
+/** Search Console API で直近28日（3〜31日前）の平均順位 / CTR / クリック / 表示回数 */
 export async function fetchSearchConsoleSummary(
+  accessToken: string,
   siteUrl: string,
 ): Promise<SearchConsoleSummary> {
   const site = siteUrl.trim();
   if (!site) throw new Error("サイトURLが設定されていません");
-
-  const token = await getAccessToken([GSC_SCOPE]);
 
   const res = await fetch(
     `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(
@@ -46,7 +40,7 @@ export async function fetchSearchConsoleSummary(
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -60,10 +54,7 @@ export async function fetchSearchConsoleSummary(
   );
 
   const data: SearchAnalyticsResponse = await res.json();
-
-  if (!res.ok) {
-    throw new Error(translateGoogleError(res.status, data?.error?.message));
-  }
+  if (!res.ok) throw new Error(translateGoogleError(res.status, data?.error?.message));
 
   const row = data.rows?.[0];
   return {
@@ -72,4 +63,29 @@ export async function fetchSearchConsoleSummary(
     clicks: Math.round(row?.clicks ?? 0),
     impressions: Math.round(row?.impressions ?? 0),
   };
+}
+
+interface SitesListResponse {
+  siteEntry?: { siteUrl?: string; permissionLevel?: string }[];
+  error?: { message?: string };
+}
+
+/** アクセス可能な Search Console サイト一覧 */
+export async function listSearchConsoleSites(
+  accessToken: string,
+): Promise<SearchConsoleSite[]> {
+  const res = await fetch("https://searchconsole.googleapis.com/webmasters/v3/sites", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  const data: SitesListResponse = await res.json();
+  if (!res.ok) throw new Error(translateGoogleError(res.status, data?.error?.message));
+
+  return (data.siteEntry ?? [])
+    .filter((s) => s.permissionLevel !== "siteUnverifiedUser")
+    .map((s) => ({
+      siteUrl: s.siteUrl ?? "",
+      permissionLevel: s.permissionLevel ?? "",
+    }))
+    .filter((s) => s.siteUrl);
 }

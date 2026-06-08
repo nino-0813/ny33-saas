@@ -61,6 +61,47 @@ export type Database = {
           },
         ]
       }
+      check_settings: {
+        Row: {
+          alert_threshold: number
+          check_key: string
+          company_id: string
+          enabled: boolean
+          frequency: string
+          id: string
+          target_score: number
+          updated_at: string
+        }
+        Insert: {
+          alert_threshold?: number
+          check_key: string
+          company_id: string
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          target_score?: number
+          updated_at?: string
+        }
+        Update: {
+          alert_threshold?: number
+          check_key?: string
+          company_id?: string
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          target_score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           area: string
@@ -205,6 +246,79 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "data_sources_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      google_oauth: {
+        Row: {
+          access_token: string | null
+          company_id: string
+          created_at: string
+          google_email: string
+          refresh_token: string | null
+          scope: string
+          token_expiry: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          company_id: string
+          created_at?: string
+          google_email?: string
+          refresh_token?: string | null
+          scope?: string
+          token_expiry?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          company_id?: string
+          created_at?: string
+          google_email?: string
+          refresh_token?: string | null
+          scope?: string
+          token_expiry?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_oauth_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_status: {
+        Row: {
+          company_id: string
+          id: string
+          status: string
+          task_key: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          id?: string
+          status?: string
+          task_key: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          id?: string
+          status?: string
+          task_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_status_company_id_fkey"
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"

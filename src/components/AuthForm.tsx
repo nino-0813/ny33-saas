@@ -21,10 +21,9 @@ export default function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
           <Anchor className="h-6 w-6 text-white" strokeWidth={2} />
         </div>
-        <h1 className="mt-4 text-xl font-bold text-foreground">
-          NY33 Company Dock
-        </h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="mt-4 text-xl font-bold text-foreground">Webドック</h1>
+        <p className="mt-0.5 text-xs text-muted">あなたのWeb健康診断</p>
+        <p className="mt-2 text-sm text-muted">
           {isLogin ? "アカウントにログイン" : "アカウントを作成"}
         </p>
       </div>

@@ -6,27 +6,27 @@
          emerald / orange / yellow accents, Geist font
 */
 :root {
-  --desk: #c5c3d1;
-  --canvas: #f5f4f0;
-  --background: #c5c3d1;
+  --desk: #eef2f6;
+  --canvas: #ffffff;
+  --background: #eef2f6; /* 明るいグレーの背景 */
   --surface: #ffffff;
-  --surface-2: #f4f4f5;
-  --foreground: #0a0a0a;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+  --surface-2: #f1f5f9;
+  --foreground: #0f1f33;
+  --muted: #64748b;
+  --border: #e5e9f0;
 
-  --navy: #0a0a0a; /* black pills */
-  --primary: #10b981; /* emerald */
-  --primary-weak: #d1fae5;
-  --accent: #f97316; /* orange */
-  --accent-weak: #ffedd5;
+  --navy: #16233c; /* ネイビーのサイドバー */
+  --primary: #16a34a; /* グリーン（健康診断トーン） */
+  --primary-weak: #dcfce7;
+  --accent: #f59e0b; /* アンバー */
+  --accent-weak: #fef3c7;
 
-  --good: #10b981;
-  --good-weak: #d1fae5;
-  --warn: #ca8a04;
-  --warn-weak: #fef9c3;
-  --bad: #f97316;
-  --bad-weak: #ffedd5;
+  --good: #16a34a;
+  --good-weak: #dcfce7;
+  --warn: #d97706;
+  --warn-weak: #fef3c7;
+  --bad: #dc2626;
+  --bad-weak: #fee2e2;
 }
 
 @theme inline {
