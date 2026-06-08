@@ -1,12 +1,18 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw, CheckCircle2, Lightbulb, ArrowRight, Zap } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lightbulb, ArrowRight, Zap, Gauge } from "lucide-react";
 import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
 import CheckSettingsForm from "@/components/checks/CheckSettingsForm";
+import RecheckButton from "@/components/checks/RecheckButton";
 import { CHECK_ICONS } from "@/components/checks/icons";
 import { Delta, StatusBadge } from "@/components/checks/bits";
 import { createClient } from "@/lib/supabase/server";
-import { getCheckRealData, type CheckRealData } from "@/lib/checks-data";
+import {
+  getCheckRealData,
+  getMeasuredResult,
+  type CheckRealData,
+} from "@/lib/checks-data";
+import { MEASURABLE } from "@/lib/measure/shared";
 import {
   getCheck,
   checkDetails,
@@ -68,11 +74,20 @@ export default async function CheckDetailPage({
     frequency: setting?.frequency ?? "weekly",
   };
 
-  // 実データ（連携済みソースがあれば実値を使用、無ければサンプル）
+  // 実測結果（PageSpeed/SSL）＞ 連携実データ（GA4/GSC）＞ サンプル の優先で表示
+  const measured = company ? await getMeasuredResult(company.id, id) : null;
   const real: CheckRealData = company
     ? await getCheckRealData(company.id, id)
     : { isReal: false };
-  const subMetrics = real.isReal && real.subMetrics ? real.subMetrics : detail.subMetrics;
+
+  const subMetrics = measured
+    ? measured.subMetrics
+    : real.isReal && real.subMetrics
+      ? real.subMetrics
+      : detail.subMetrics;
+  const displayScore = measured?.score ?? check.score;
+  const displayStatus = measured?.status ?? check.status;
+  const measurable = MEASURABLE.has(id);
 
   return (
     <div className="space-y-5">
@@ -97,23 +112,20 @@ export default async function CheckDetailPage({
               <p className="text-sm text-muted">{check.subtitle}</p>
             </div>
           </div>
-          <button className="inline-flex shrink-0 items-center gap-2 self-start rounded-full bg-navy px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy/90 sm:self-auto">
-            <RefreshCw className="h-4 w-4" />
-            再チェック
-          </button>
+          <RecheckButton checkKey={id} measurable={measurable} />
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-border pt-4">
           <div>
             <p className="text-xs text-muted">スコア</p>
             <p className="leading-none">
-              <span className="text-3xl font-bold text-good">{check.score}</span>
+              <span className="text-3xl font-bold text-good">{displayScore}</span>
               <span className="ml-1 text-sm text-muted">/ 100</span>
             </p>
           </div>
           <div>
             <p className="mb-1 text-xs text-muted">状態</p>
-            <StatusBadge status={check.status} />
+            <StatusBadge status={displayStatus} />
           </div>
           <div>
             <p className="mb-1 text-xs text-muted">前回比</p>
@@ -136,13 +148,18 @@ export default async function CheckDetailPage({
           </div>
 
           {/* 推移 */}
-          <ScoreTrendChart data={checkTrend(check.score)} title="スコアの推移" />
+          <ScoreTrendChart data={checkTrend(displayScore)} title="スコアの推移" />
 
           {/* サブ指標 */}
           <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-2">
               <h2 className="text-base font-bold text-foreground">指標の内訳</h2>
-              {real.isReal ? (
+              {measured ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
+                  <Gauge className="h-3 w-3" />
+                  実測{measured.measuredAt ? `・${measured.measuredAt}` : ""}
+                </span>
+              ) : real.isReal ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
                   <Zap className="h-3 w-3" />
                   実データ{real.lastSync ? `・${real.lastSync}` : ""}

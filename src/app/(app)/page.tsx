@@ -5,6 +5,7 @@ import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
 import CheckList from "@/components/checks/CheckList";
 import { Delta } from "@/components/checks/bits";
 import { getDashboardData } from "@/lib/queries";
+import { getMeasuredMap } from "@/lib/checks-data";
 import {
   summary,
   priorityTasks,
@@ -16,6 +17,7 @@ import {
 export default async function DashboardPage() {
   const data = await getDashboardData();
   if (!data) redirect("/onboarding");
+  const measured = await getMeasuredMap();
 
   return (
     <div className="space-y-5">
@@ -41,6 +43,7 @@ export default async function DashboardPage() {
         <div className="xl:col-span-2">
           <CheckList
             title="チェック項目の一覧"
+            overrides={measured}
             headerAction={
               <Link
                 href="/checks"

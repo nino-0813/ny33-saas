@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { webChecks, type WebCheck } from "@/lib/webdock";
+import { webChecks, type WebCheck, type CheckStatus } from "@/lib/webdock";
 import { CHECK_ICONS } from "./icons";
 import { Delta, StatusBadge } from "./bits";
 
-function CheckRow({ check }: { check: WebCheck }) {
+type Override = { score: number; status: CheckStatus };
+
+function CheckRow({ check, override }: { check: WebCheck; override?: Override }) {
   const { Icon, cls } = CHECK_ICONS[check.icon];
+  const score = override?.score ?? check.score;
+  const status = override?.status ?? check.status;
   return (
     <li>
       <Link
@@ -26,17 +30,17 @@ function CheckRow({ check }: { check: WebCheck }) {
         {/* スコア */}
         <div>
           <div className="flex items-baseline gap-1">
-            <span className="text-sm font-bold text-foreground">{check.score}</span>
+            <span className="text-sm font-bold text-foreground">{score}</span>
             <span className="text-[11px] text-muted">/ 100</span>
           </div>
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-good" style={{ width: `${check.score}%` }} />
+            <div className="h-full rounded-full bg-good" style={{ width: `${score}%` }} />
           </div>
         </div>
 
         {/* 状態 */}
         <div>
-          <StatusBadge status={check.status} />
+          <StatusBadge status={status} />
         </div>
 
         {/* 前回比 */}
@@ -58,10 +62,12 @@ export default function CheckList({
   title,
   headerAction,
   checks = webChecks,
+  overrides,
 }: {
   title?: string;
   headerAction?: React.ReactNode;
   checks?: WebCheck[];
+  overrides?: Map<string, Override>;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
@@ -84,7 +90,7 @@ export default function CheckList({
 
       <ul className="divide-y divide-border">
         {checks.map((c) => (
-          <CheckRow key={c.id} check={c} />
+          <CheckRow key={c.id} check={c} override={overrides?.get(c.id)} />
         ))}
       </ul>
     </div>

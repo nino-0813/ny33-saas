@@ -1,11 +1,15 @@
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import CheckList from "@/components/checks/CheckList";
 import { webChecks } from "@/lib/webdock";
+import { getMeasuredMap } from "@/lib/checks-data";
 
 export const metadata = { title: "チェック結果 — Webドック" };
 
-export default function ChecksPage() {
-  const ok = webChecks.filter((c) => c.status === "ok").length;
+export default async function ChecksPage() {
+  const measured = await getMeasuredMap();
+  const effStatus = (c: (typeof webChecks)[number]) =>
+    measured.get(c.id)?.status ?? c.status;
+  const ok = webChecks.filter((c) => effStatus(c) === "ok").length;
   const warn = webChecks.length - ok;
 
   return (
@@ -39,7 +43,7 @@ export default function ChecksPage() {
       </div>
 
       {/* 一覧 */}
-      <CheckList title="チェック項目の一覧" />
+      <CheckList title="チェック項目の一覧" overrides={measured} />
     </div>
   );
 }

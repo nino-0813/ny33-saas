@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { SubMetric } from "@/lib/webdock";
+import type { CheckStatus, SubMetric } from "@/lib/webdock";
 
 /** チェック → 実データのソース（連携済みなら実値を使う） */
 const SOURCE_BY_CHECK: Record<string, string> = {
@@ -58,4 +58,66 @@ export async function getCheckRealData(
     };
   }
   return { isReal: false, sourceName };
+}
+
+/* ============================================================
+ * 実測結果（PageSpeed / SSL など、check_results テーブル）
+ * ========================================================== */
+
+export interface MeasuredResult {
+  score: number;
+  status: CheckStatus;
+  subMetrics: SubMetric[];
+  note: string;
+  measuredAt: string | null;
+}
+
+/** 1チェックの実測結果（無ければ null） */
+export async function getMeasuredResult(
+  companyId: string,
+  checkId: string,
+): Promise<MeasuredResult | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("check_results")
+    .select("score, status, metrics, note, measured_at")
+    .eq("company_id", companyId)
+    .eq("check_key", checkId)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    score: data.score,
+    status: data.status as CheckStatus,
+    subMetrics: (data.metrics as unknown as SubMetric[]) ?? [],
+    note: data.note,
+    measuredAt: fmtSync(data.measured_at),
+  };
+}
+
+export type MeasuredMap = Map<string, { score: number; status: CheckStatus }>;
+
+/** 全チェックの実測スコア/状態マップ（一覧の上書き用・ログイン会社を解決） */
+export async function getMeasuredMap(): Promise<MeasuredMap> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return new Map();
+  const { data: company } = await supabase
+    .from("companies")
+    .select("id")
+    .eq("owner_id", user.id)
+    .maybeSingle();
+  if (!company) return new Map();
+
+  const { data } = await supabase
+    .from("check_results")
+    .select("check_key, score, status")
+    .eq("company_id", company.id);
+  return new Map(
+    (data ?? []).map((r) => [
+      r.check_key,
+      { score: r.score, status: r.status as CheckStatus },
+    ]),
+  );
 }

@@ -61,6 +61,47 @@ export type Database = {
           },
         ]
       }
+      check_results: {
+        Row: {
+          check_key: string
+          company_id: string
+          id: string
+          measured_at: string
+          metrics: Json
+          note: string
+          score: number
+          status: string
+        }
+        Insert: {
+          check_key: string
+          company_id: string
+          id?: string
+          measured_at?: string
+          metrics?: Json
+          note?: string
+          score?: number
+          status?: string
+        }
+        Update: {
+          check_key?: string
+          company_id?: string
+          id?: string
+          measured_at?: string
+          metrics?: Json
+          note?: string
+          score?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_results_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_settings: {
         Row: {
           alert_threshold: number
