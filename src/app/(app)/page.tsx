@@ -10,6 +10,7 @@ import {
   summary,
   priorityTasks,
   newsItems,
+  webChecks,
   type Priority,
   type NewsTag,
 } from "@/lib/webdock";
@@ -80,6 +81,7 @@ function ScoreCard() {
           <span className="mt-3 inline-block rounded-md bg-good-weak px-2.5 py-1 text-xs font-bold text-good">
             {summary.scoreLabel}
           </span>
+          <p className="mt-2 text-[11px] text-muted">全{webChecks.length}項目の判定から算出</p>
         </div>
         <div className="flex flex-col items-center gap-1.5">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-good-weak">

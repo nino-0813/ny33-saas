@@ -89,6 +89,12 @@ export default async function CheckDetailPage({
       : detail.subMetrics;
   const displayScore = measured?.score ?? check.score;
   const displayStatus = measured?.status ?? check.status;
+  const scoreColor =
+    displayStatus === "ok"
+      ? "text-good"
+      : displayStatus === "warn"
+        ? "text-warn"
+        : "text-bad";
   const measurable = MEASURABLE.has(id);
 
   // AI診断（あれば AI生成の所見、無ければサンプルの定型文）
@@ -128,15 +134,16 @@ export default async function CheckDetailPage({
 
         <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-border pt-4">
           <div>
-            <p className="text-xs text-muted">スコア</p>
-            <p className="leading-none">
-              <span className="text-3xl font-bold text-good">{displayScore}</span>
-              <span className="ml-1 text-sm text-muted">/ 100</span>
-            </p>
+            <p className="mb-1 text-xs text-muted">判定</p>
+            <StatusBadge status={displayStatus} />
           </div>
           <div>
-            <p className="mb-1 text-xs text-muted">状態</p>
-            <StatusBadge status={displayStatus} />
+            <p className="text-xs text-muted">健康度</p>
+            <p className="leading-none">
+              <span className={`text-3xl font-bold ${scoreColor}`}>{displayScore}</span>
+              <span className="ml-1 text-sm text-muted">/ 100</span>
+            </p>
+            <p className="mt-1 text-[11px] text-muted">各指標の目安との比較で算出</p>
           </div>
           <div>
             <p className="mb-1 text-xs text-muted">前回比</p>
@@ -180,7 +187,7 @@ export default async function CheckDetailPage({
           {/* サブ指標 */}
           <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-base font-bold text-foreground">指標の内訳</h2>
+              <h2 className="text-base font-bold text-foreground">指標の内訳（目安との比較）</h2>
               {measured ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-600">
                   <Gauge className="h-3 w-3" />
@@ -205,13 +212,39 @@ export default async function CheckDetailPage({
               )}
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {subMetrics.map((m) => (
-                <div key={m.label} className="rounded-xl bg-surface-2 p-3">
-                  <p className="text-xs text-muted">{m.label}</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">{m.value}</p>
-                  {m.sub && <p className="mt-0.5 text-[11px] text-muted">{m.sub}</p>}
-                </div>
-              ))}
+              {subMetrics.map((m) => {
+                const dot =
+                  m.judge === "ok"
+                    ? "bg-good"
+                    : m.judge === "warn"
+                      ? "bg-warn"
+                      : m.judge === "bad"
+                        ? "bg-bad"
+                        : "bg-border";
+                const ring =
+                  m.judge === "ok"
+                    ? "border-good/30"
+                    : m.judge === "warn"
+                      ? "border-warn/40"
+                      : m.judge === "bad"
+                        ? "border-bad/40"
+                        : "border-border";
+                return (
+                  <div key={m.label} className={`rounded-xl border bg-surface-2 p-3 ${ring}`}>
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-xs text-muted">{m.label}</p>
+                      {m.judge && <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />}
+                    </div>
+                    <p className="mt-1 text-lg font-bold text-foreground">{m.value}</p>
+                    {m.sub && <p className="mt-0.5 text-[11px] text-muted">{m.sub}</p>}
+                    {m.target && (
+                      <p className="mt-1.5 border-t border-border pt-1.5 text-[11px] text-muted">
+                        目安: {m.target}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

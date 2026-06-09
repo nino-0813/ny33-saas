@@ -10,6 +10,8 @@ function CheckRow({ check, override }: { check: WebCheck; override?: Override })
   const { Icon, cls } = CHECK_ICONS[check.icon];
   const score = override?.score ?? check.score;
   const status = override?.status ?? check.status;
+  const barCls =
+    status === "ok" ? "bg-good" : status === "warn" ? "bg-warn" : "bg-bad";
   return (
     <li>
       <Link
@@ -27,14 +29,14 @@ function CheckRow({ check, override }: { check: WebCheck; override?: Override })
           </div>
         </div>
 
-        {/* スコア */}
+        {/* 健康度 */}
         <div>
           <div className="flex items-baseline gap-1">
             <span className="text-sm font-bold text-foreground">{score}</span>
             <span className="text-[11px] text-muted">/ 100</span>
           </div>
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
-            <div className="h-full rounded-full bg-good" style={{ width: `${score}%` }} />
+            <div className={`h-full rounded-full ${barCls}`} style={{ width: `${score}%` }} />
           </div>
         </div>
 
@@ -81,8 +83,8 @@ export default function CheckList({
       {/* ヘッダー行 */}
       <div className="hidden grid-cols-[1fr_140px_90px_80px_110px_24px] gap-3 border-b border-border px-5 py-2.5 text-xs font-medium text-muted lg:grid">
         <span>チェック項目</span>
-        <span>スコア</span>
-        <span>状態</span>
+        <span>健康度</span>
+        <span>判定</span>
         <span>前回比</span>
         <span>最終チェック</span>
         <span />
