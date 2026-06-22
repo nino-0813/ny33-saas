@@ -5,13 +5,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  ClipboardCheck,
-  FileText,
-  ListChecks,
+  MessageSquareText,
+  Activity,
   Settings,
-  Building2,
-  Bell,
-  LifeBuoy,
+  ChartNoAxesCombined,
+  Workflow,
   Anchor,
   Menu,
   X,
@@ -21,14 +19,12 @@ import {
 import { signOut } from "@/lib/auth-actions";
 
 const nav = [
-  { href: "/", label: "ダッシュボード", icon: LayoutDashboard },
-  { href: "/checks", label: "チェック結果", icon: ClipboardCheck },
-  { href: "/reports", label: "レポート", icon: FileText },
-  { href: "/tasks", label: "改善タスク", icon: ListChecks },
+  { href: "/", label: "ホーム", icon: LayoutDashboard },
+  { href: "/chat", label: "集客チャット", icon: MessageSquareText },
+  { href: "/traffic", label: "流入分析", icon: Activity },
+  { href: "/forecast", label: "需要予測", icon: ChartNoAxesCombined },
+  { href: "/consulting", label: "業務・ROI診断", icon: Workflow },
   { href: "/sources", label: "設定・連携", icon: Settings },
-  { href: "/company", label: "会社情報", icon: Building2 },
-  { href: "/news", label: "お知らせ", icon: Bell, badge: "3" },
-  { href: "/support", label: "サポート", icon: LifeBuoy },
 ];
 
 function NavItems({ onNavigate }: { onNavigate?: () => void }) {
@@ -53,11 +49,6 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
           >
             <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
             <span className="flex-1">{item.label}</span>
-            {item.badge && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                {item.badge}
-              </span>
-            )}
           </Link>
         );
       })}

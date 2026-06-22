@@ -58,6 +58,108 @@ export async function fetchGa4Summary(
   return { pv: num(0), uu: num(1), cv: num(2) };
 }
 
+export interface Ga4Channel {
+  channel: string; // 流入元（チャネルグループ）
+  sessions: number;
+  users: number;
+  conversions: number; // キーイベント（CV）
+  cvr: number; // セッションCV率（%）
+}
+
+interface ChannelReportResponse {
+  rows?: {
+    dimensionValues?: { value?: string }[];
+    metricValues?: { value?: string }[];
+  }[];
+  error?: { message?: string };
+}
+
+/** GA4 で直近28日の「流入元（チャネルグループ）別」のセッション・ユーザー・CV・CV率を取得 */
+export async function fetchGa4Channels(
+  accessToken: string,
+  propertyId: string,
+): Promise<Ga4Channel[]> {
+  const id = propertyId.replace(/[^0-9]/g, "");
+  if (!id) throw new Error("GA4 のプロパティID（数値）が正しくありません");
+
+  const res = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${id}:runReport`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: "28daysAgo", endDate: "yesterday" }],
+        dimensions: [{ name: "sessionDefaultChannelGroup" }],
+        metrics: [
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "keyEvents" },
+        ],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 12,
+      }),
+      cache: "no-store",
+    },
+  );
+
+  const data: ChannelReportResponse = await res.json();
+  if (!res.ok) throw new Error(translateGoogleError(res.status, data?.error?.message));
+
+  return (data.rows ?? []).map((row) => {
+    const channel = row.dimensionValues?.[0]?.value || "(その他)";
+    const m = row.metricValues ?? [];
+    const sessions = Math.round(Number(m[0]?.value ?? 0));
+    const users = Math.round(Number(m[1]?.value ?? 0));
+    const conversions = Math.round(Number(m[2]?.value ?? 0));
+    const cvr = sessions > 0 ? (conversions / sessions) * 100 : 0;
+    return { channel, sessions, users, conversions, cvr };
+  });
+}
+
+export interface Ga4Event {
+  name: string;
+  count: number;
+}
+
+/** GA4 で直近28日に発生したイベント名と回数を取得（CV候補の発見に使う） */
+export async function fetchGa4Events(
+  accessToken: string,
+  propertyId: string,
+): Promise<Ga4Event[]> {
+  const id = propertyId.replace(/[^0-9]/g, "");
+  if (!id) throw new Error("GA4 のプロパティID（数値）が正しくありません");
+
+  const res = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${id}:runReport`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: "28daysAgo", endDate: "yesterday" }],
+        dimensions: [{ name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
+        limit: 30,
+      }),
+      cache: "no-store",
+    },
+  );
+
+  const data: ChannelReportResponse = await res.json();
+  if (!res.ok) throw new Error(translateGoogleError(res.status, data?.error?.message));
+
+  return (data.rows ?? []).map((row) => ({
+    name: row.dimensionValues?.[0]?.value || "(不明)",
+    count: Math.round(Number(row.metricValues?.[0]?.value ?? 0)),
+  }));
+}
+
 interface AccountSummariesResponse {
   accountSummaries?: {
     displayName?: string;

@@ -1,5 +1,27 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## AI需要予測（TimesFM）
+
+`/forecast` でCSVを使った需要予測ができます。Next.jsとは別にTimesFM APIを起動してください。
+
+```bash
+# ターミナル1: TimesFM API
+cd services/timesfm-api
+python3.12 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# ターミナル2: Webドック
+cd ../..
+cp .env.example .env.local
+npm install
+npm run dev
+```
+
+本番ではTimesFM APIを常駐コンテナへデプロイし、Vercelに
+`TIMESFM_API_URL` と `TIMESFM_API_KEY` を設定します。
+
 ## Getting Started
 
 First, run the development server:

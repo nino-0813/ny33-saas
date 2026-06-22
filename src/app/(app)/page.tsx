@@ -1,199 +1,315 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ShieldCheck, ChevronRight } from "lucide-react";
-import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
-import CheckList from "@/components/checks/CheckList";
-import { Delta } from "@/components/checks/bits";
-import { getDashboardData } from "@/lib/queries";
-import { getMeasuredMap } from "@/lib/checks-data";
 import {
-  summary,
-  priorityTasks,
-  newsItems,
-  webChecks,
-  type Priority,
-  type NewsTag,
-} from "@/lib/webdock";
+  ShieldCheck,
+  MessageSquareText,
+  Activity,
+  ChartNoAxesCombined,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+} from "lucide-react";
+import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
+import DailyFocus from "@/components/dashboard/DailyFocus";
+import GoalCard from "@/components/dashboard/GoalCard";
+import { getDashboardData } from "@/lib/queries";
+import { getCurrentGoal } from "@/lib/goals-data";
+import { getLiveMetrics } from "@/lib/live-metrics";
+import type { Kpi, AiIssue } from "@/lib/mock";
 
-export default async function DashboardPage() {
-  const data = await getDashboardData();
+export default async function HomePage() {
+  const [data, goal, live] = await Promise.all([
+    getDashboardData(),
+    getCurrentGoal(),
+    getLiveMetrics(),
+  ]);
   if (!data) redirect("/onboarding");
-  const measured = await getMeasuredMap();
+
+  const today = new Intl.DateTimeFormat("ja-JP", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date());
+
+  const kpis = data.kpis.slice(0, 2);
+  const issues = data.aiIssues.slice(0, 4);
 
   return (
-    <div className="space-y-5">
-      {/* 上部サマリー */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ScoreCard />
-        <DualCard
-          items={[
-            { label: "累計検出数", value: summary.totalDetections, unit: "件", delta: summary.totalDetectionsDelta, deltaUnit: "件", deltaPrefix: "前月比" },
-            { label: "今月のチェック数", value: summary.monthlyChecks, unit: "件", delta: summary.monthlyChecksDelta, deltaUnit: "件", deltaPrefix: "前月比" },
-          ]}
-        />
-        <DualCard
-          items={[
-            { label: "要対応の項目", value: summary.needsAction, unit: "件", delta: summary.needsActionDelta, deltaUnit: "件", deltaPrefix: "前回比" },
-            { label: "すべて正常の項目", value: summary.allNormal, unit: "件", delta: summary.allNormalDelta, deltaUnit: "件", deltaPrefix: "前回比" },
-          ]}
-        />
+    <div className="space-y-5 pt-2">
+      {/* あいさつ */}
+      <div>
+        <p className="text-xs font-medium text-muted">{today}</p>
+        <h1 className="mt-0.5 text-xl font-bold text-foreground">
+          こんにちは、{data.company.name} さん
+        </h1>
+        <p className="mt-0.5 text-sm text-muted">
+          今日のWeb集客の状況と、やるべきことをまとめました。
+        </p>
       </div>
 
-      {/* メイン: チェック一覧 + 右カラム */}
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
-        <div className="xl:col-span-2">
-          <CheckList
-            title="チェック項目の一覧"
-            overrides={measured}
-            headerAction={
-              <Link
-                href="/checks"
-                className="inline-flex items-center gap-0.5 text-sm font-medium text-good hover:underline"
-              >
-                すべてのチェック結果を見る
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            }
-          />
+      {/* AIの今日の一手 */}
+      <DailyFocus />
+
+      {/* 主要数値 */}
+      {live.connected ? (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <ScoreMetric score={data.health.score} prev={data.health.prevScore} />
+          {live.ga4 && (
+            <SimpleMetric
+              label="アクセス（ユーザー）"
+              value={live.ga4.uu.toLocaleString()}
+              sub={`PV ${live.ga4.pv.toLocaleString()}・CV ${live.ga4.cv.toLocaleString()}`}
+            />
+          )}
+          {live.gsc && (
+            <SimpleMetric
+              label="検索 平均順位"
+              value={`${live.gsc.position.toFixed(1)}位`}
+              sub={`CTR ${live.gsc.ctr}%`}
+            />
+          )}
+          <Link
+            href="/traffic"
+            className="flex flex-col justify-between rounded-2xl border border-dashed border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary-weak/30"
+          >
+            <p className="text-xs font-medium text-muted">流入をくわしく</p>
+            <span className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-primary">
+              流入分析を見る <ArrowRight className="h-4 w-4" />
+            </span>
+          </Link>
         </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <ScoreMetric score={data.health.score} prev={data.health.prevScore} />
+          {kpis.map((k) => (
+            <KpiMetric key={k.id} kpi={k} />
+          ))}
+          <Link
+            href="/sources"
+            className="flex flex-col justify-between rounded-2xl border border-dashed border-border bg-surface p-4 text-left transition-colors hover:border-primary/40 hover:bg-primary-weak/30"
+          >
+            <p className="text-xs font-medium text-muted">実データを表示</p>
+            <span className="mt-1 inline-flex items-center gap-1 text-sm font-bold text-primary">
+              GA4と連携する <ArrowRight className="h-4 w-4" />
+            </span>
+          </Link>
+        </div>
+      )}
+
+      {/* メイン2カラム */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        {/* 目標 + やることリスト */}
+        <div className="space-y-5 xl:col-span-2">
+          <GoalCard goal={goal} />
+          <TodoCard issues={issues} />
+        </div>
+
+        {/* 右: 推移 + クイック導線 */}
         <div className="space-y-5">
           <ScoreTrendChart />
-          <PriorityTasksCard />
-          <NewsCard />
+          <QuickLinks />
         </div>
       </div>
     </div>
   );
 }
 
-/* ============================ 上部カード ============================ */
+/* ============================ 数値カード ============================ */
 
-function ScoreCard() {
+function ScoreMetric({ score, prev }: { score: number; prev: number }) {
+  const delta = score - prev;
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <p className="mb-2 text-sm font-bold text-foreground">Web健康スコア</p>
+    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="leading-none">
-            <span className="text-5xl font-bold text-good">{summary.healthScore}</span>
-            <span className="ml-1 text-base font-medium text-muted">/ 100</span>
-          </p>
-          <span className="mt-3 inline-block rounded-md bg-good-weak px-2.5 py-1 text-xs font-bold text-good">
-            {summary.scoreLabel}
-          </span>
-          <p className="mt-2 text-[11px] text-muted">全{webChecks.length}項目の判定から算出</p>
-        </div>
-        <div className="flex flex-col items-center gap-1.5">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-good-weak">
-            <ShieldCheck className="h-8 w-8 text-good" strokeWidth={2.2} />
-          </div>
-          <Delta value={summary.scoreDelta} prefix="前回比" />
-        </div>
+        <p className="text-xs font-medium text-muted">Web健康スコア</p>
+        <ShieldCheck className="h-4 w-4 text-good" />
       </div>
+      <p className="mt-1 leading-none">
+        <span className="text-3xl font-bold text-good">{score}</span>
+        <span className="ml-1 text-xs font-medium text-muted">/ 100</span>
+      </p>
+      <DeltaText delta={delta} suffix="pt" prefix="前回比" />
     </div>
   );
 }
 
-interface MetricItem {
+function SimpleMetric({
+  label,
+  value,
+  sub,
+}: {
   label: string;
-  value: number;
-  unit: string;
-  delta: number;
-  deltaUnit: string;
-  deltaPrefix: string;
-}
-
-function DualCard({ items }: { items: MetricItem[] }) {
+  value: string;
+  sub?: string;
+}) {
   return (
-    <div className="grid grid-cols-2 gap-4 rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      {items.map((m) => (
-        <div key={m.label}>
-          <p className="text-sm font-medium text-muted">{m.label}</p>
-          <p className="mt-1 leading-none">
-            <span className="text-4xl font-bold text-foreground">{m.value}</span>
-            <span className="ml-1 text-sm font-medium text-muted">{m.unit}</span>
-          </p>
-          <div className="mt-2">
-            <Delta value={m.delta} prefix={m.deltaPrefix} unit={m.deltaUnit} />
-          </div>
-        </div>
-      ))}
+    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium text-muted">{label}</p>
+      <p className="mt-1 truncate text-3xl font-bold leading-none text-foreground">{value}</p>
+      {sub && <p className="mt-2 truncate text-xs text-muted">{sub}</p>}
     </div>
   );
 }
 
-/* ============================ 優先タスク ============================ */
+function KpiMetric({ kpi }: { kpi: Kpi }) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-4 shadow-sm">
+      <p className="text-xs font-medium text-muted">{kpi.label}</p>
+      <p className="mt-1 truncate text-3xl font-bold leading-none text-foreground">
+        {kpi.value}
+        {kpi.unit && <span className="ml-0.5 text-xs font-medium text-muted">{kpi.unit}</span>}
+      </p>
+      <p
+        className={`mt-2 flex items-center gap-1 text-xs font-bold ${
+          kpi.trend === "up"
+            ? "text-good"
+            : kpi.trend === "down"
+              ? "text-bad"
+              : "text-muted"
+        }`}
+      >
+        {kpi.trend === "up" ? (
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        ) : kpi.trend === "down" ? (
+          <ArrowDownRight className="h-3.5 w-3.5" />
+        ) : (
+          <Minus className="h-3.5 w-3.5" />
+        )}
+        {kpi.deltaLabel}
+      </p>
+    </div>
+  );
+}
 
-const PRIORITY_META: Record<Priority, { label: string; cls: string }> = {
-  high: { label: "優先度：高", cls: "bg-red-50 text-red-600" },
-  mid: { label: "優先度：中", cls: "bg-amber-50 text-amber-600" },
-  low: { label: "優先度：低", cls: "bg-blue-50 text-blue-600" },
-};
+function DeltaText({
+  delta,
+  suffix = "",
+  prefix = "",
+}: {
+  delta: number;
+  suffix?: string;
+  prefix?: string;
+}) {
+  const up = delta > 0;
+  const flat = delta === 0;
+  return (
+    <p
+      className={`mt-2 flex items-center gap-1 text-xs font-bold ${
+        flat ? "text-muted" : up ? "text-good" : "text-bad"
+      }`}
+    >
+      {flat ? (
+        <Minus className="h-3.5 w-3.5" />
+      ) : up ? (
+        <ArrowUpRight className="h-3.5 w-3.5" />
+      ) : (
+        <ArrowDownRight className="h-3.5 w-3.5" />
+      )}
+      {prefix} {up ? "+" : ""}
+      {delta}
+      {suffix}
+    </p>
+  );
+}
 
-function PriorityTasksCard() {
+/* ============================ やることリスト ============================ */
+
+function TodoCard({ issues }: { issues: AiIssue[] }) {
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-base font-bold text-foreground">
-          今週の優先タスク <span className="text-xs font-medium text-muted">（推奨アクション）</span>
-        </h2>
-        <Link href="/tasks" className="shrink-0 text-xs font-medium text-good hover:underline">
-          すべてのタスクを見る
-        </Link>
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-foreground">今日のやること</h2>
+          <p className="mt-0.5 text-xs text-muted">AIが検知した、効果の大きい順の改善ポイント</p>
+        </div>
       </div>
-      <ul className="space-y-2.5">
-        {priorityTasks.map((t) => {
-          const meta = PRIORITY_META[t.priority];
-          return (
-            <li key={t.rank} className="flex items-center gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-muted">
+
+      {issues.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted">
+          いまのところ大きな課題はありません。集客チャットで次の一手を相談しましょう。
+        </p>
+      ) : (
+        <ul className="space-y-2.5">
+          {issues.map((t) => (
+            <li
+              key={t.rank}
+              className="flex items-start gap-3 rounded-xl border border-border/70 bg-surface-2/40 p-3"
+            >
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
                 {t.rank}
               </span>
-              <span className="flex-1 text-sm text-foreground">{t.text}</span>
-              <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold ${meta.cls}`}>
-                {meta.label}
-              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground">{t.title}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-muted">{t.detail}</p>
+                <Link
+                  href="/chat"
+                  className="mt-1.5 inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                >
+                  進め方を相談する <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              {t.lossYen > 0 && (
+                <span className="shrink-0 rounded-md bg-bad-weak px-2 py-1 text-[11px] font-bold text-bad">
+                  -{t.lossYen.toLocaleString()}円/月
+                </span>
+              )}
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
-/* ============================ お知らせ ============================ */
+/* ============================ クイック導線 ============================ */
 
-const NEWS_META: Record<NewsTag, { label: string; cls: string }> = {
-  new: { label: "新着", cls: "bg-red-50 text-red-600" },
-  feature: { label: "機能追加", cls: "bg-blue-50 text-blue-600" },
-  info: { label: "お知らせ", cls: "bg-slate-100 text-slate-500" },
-};
+const LINKS = [
+  {
+    href: "/chat",
+    label: "集客チャット",
+    desc: "AIに集客の相談をする",
+    icon: MessageSquareText,
+  },
+  {
+    href: "/traffic",
+    label: "流入分析",
+    desc: "成果につながる流入元を見る",
+    icon: Activity,
+  },
+  {
+    href: "/forecast",
+    label: "需要予測",
+    desc: "先の検索需要を読む",
+    icon: ChartNoAxesCombined,
+  },
+];
 
-function NewsCard() {
+function QuickLinks() {
   return (
     <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-base font-bold text-foreground">最新のお知らせ</h2>
-        <Link href="/news" className="shrink-0 text-xs font-medium text-good hover:underline">
-          すべてのお知らせを見る
-        </Link>
-      </div>
-      <ul className="space-y-3.5">
-        {newsItems.map((n, i) => {
-          const meta = NEWS_META[n.tag];
+      <h2 className="mb-3 text-base font-bold text-foreground">よく使う機能</h2>
+      <div className="space-y-2">
+        {LINKS.map((l) => {
+          const Icon = l.icon;
           return (
-            <li key={i}>
-              <div className="flex items-center gap-2">
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${meta.cls}`}>
-                  {meta.label}
-                </span>
-                <span className="text-[11px] text-muted">{n.date}</span>
+            <Link
+              key={l.href}
+              href={l.href}
+              className="group flex items-center gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:border-primary/40 hover:bg-primary-weak/30"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-weak text-primary">
+                <Icon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground">{l.label}</p>
+                <p className="truncate text-xs text-muted">{l.desc}</p>
               </div>
-              <p className="mt-1 text-sm text-foreground">{n.title}</p>
-            </li>
+              <ArrowRight className="h-4 w-4 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+            </Link>
           );
         })}
-      </ul>
+      </div>
     </div>
   );
 }

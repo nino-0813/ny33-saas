@@ -338,6 +338,53 @@ export type Database = {
           },
         ]
       }
+      goals: {
+        Row: {
+          company_id: string
+          created_at: string
+          detail: string
+          due_date: string | null
+          id: string
+          status: string
+          steps: Json
+          target_label: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          id?: string
+          status?: string
+          steps?: Json
+          target_label?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          detail?: string
+          due_date?: string | null
+          id?: string
+          status?: string
+          steps?: Json
+          target_label?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       google_oauth: {
         Row: {
           access_token: string | null
