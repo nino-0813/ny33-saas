@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { PageHeader, Card, SectionTitle } from "@/components/ui";
+import CompanyInfoForm from "@/components/CompanyInfoForm";
 import DataSources from "@/components/DataSources";
 import SyncButton from "@/components/SyncButton";
 import GoogleSourceSelect, {
@@ -54,7 +55,7 @@ export default async function SourcesPage({
   } = await supabase.auth.getUser();
   const { data: company } = await supabase
     .from("companies")
-    .select("id")
+    .select("id, name, industry, area, website_url, description")
     .eq("owner_id", user!.id)
     .maybeSingle();
   const companyId = company!.id;
@@ -119,6 +120,19 @@ export default async function SourcesPage({
           {STATUS_MSG[googleStatus].text}
         </div>
       )}
+
+      {/* 会社情報 */}
+      <section>
+        <CompanyInfoForm
+          company={{
+            name: company!.name,
+            industry: company!.industry,
+            area: company!.area,
+            websiteUrl: company!.website_url,
+            description: company!.description,
+          }}
+        />
+      </section>
 
       {/* Google 連携 */}
       <section>

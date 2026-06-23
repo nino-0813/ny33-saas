@@ -58,8 +58,12 @@ export async function buildMarketingContext(): Promise<string> {
     .map((i) => `- [優先度${i.priority}] ${i.title}: ${i.detail}`)
     .join("\n");
 
+  const desc = data.company.description
+    ? `\n事業内容: ${data.company.description}`
+    : "";
+
   return `# 会社
-${data.company.name}（業種: ${data.company.industry || "不明"} / エリア: ${data.company.area || "不明"}）
+${data.company.name}（業種: ${data.company.industry || "不明"} / エリア: ${data.company.area || "不明"}）${desc}
 
 # Web健康スコア
 ${data.health.score}/100（前回 ${data.health.prevScore}）

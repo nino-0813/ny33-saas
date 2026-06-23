@@ -193,6 +193,7 @@ export type Database = {
           competitor_area: string
           competitor_total: number
           created_at: string
+          description: string
           employees: number
           id: string
           industry: string
@@ -209,6 +210,7 @@ export type Database = {
           competitor_area?: string
           competitor_total?: number
           created_at?: string
+          description?: string
           employees?: number
           id?: string
           industry?: string
@@ -225,6 +227,7 @@ export type Database = {
           competitor_area?: string
           competitor_total?: number
           created_at?: string
+          description?: string
           employees?: number
           id?: string
           industry?: string

@@ -21,6 +21,7 @@ export interface DashboardData {
     name: string;
     industry: string;
     area: string;
+    description: string;
     employees: number;
     plan: string;
     competitorArea: string;
@@ -109,6 +110,7 @@ export const getDashboardData = cache(
       name: c.name,
       industry: c.industry,
       area: c.area,
+      description: c.description ?? "",
       employees: c.employees,
       plan: c.plan,
       competitorArea: c.competitor_area,

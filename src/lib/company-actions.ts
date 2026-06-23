@@ -35,8 +35,8 @@ export async function updateCompany(
       name,
       industry: String(formData.get("industry") ?? "").trim(),
       area: String(formData.get("area") ?? "").trim(),
-      employees: parseInt(String(formData.get("employees") ?? "0"), 10) || 0,
       website_url: String(formData.get("website_url") ?? "").trim(),
+      description: String(formData.get("description") ?? "").trim(),
       updated_at: new Date().toISOString(),
     })
     .eq("id", company.id);
