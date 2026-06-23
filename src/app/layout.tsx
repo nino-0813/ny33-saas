@@ -24,6 +24,7 @@ const notoSansJP = Noto_Sans_JP({
 
 export const metadata: Metadata = {
   title: "Webドック — あなたのWeb健康診断",
+  applicationName: "Webドック",
   description:
     "アクセス・SEO・MEO・SNS・表示速度・セキュリティなど、Webの健康状態を毎日チェック。スコア化して改善を提案します。",
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,7 +11,6 @@ import {
   Settings,
   ChartNoAxesCombined,
   Workflow,
-  Anchor,
   Menu,
   X,
   ChevronDown,
@@ -41,10 +41,10 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             href={item.href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`group flex items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium transition-colors duration-150 ${
+            className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors duration-150 ${
               active
-                ? "bg-green-500 text-white shadow-sm"
-                : "text-white/65 hover:bg-white/10 hover:text-white"
+                ? "bg-[#f4dfb9]/95 text-[#102942] shadow-[0_8px_24px_rgba(3,17,31,0.22)] ring-1 ring-white/35"
+                : "text-white/75 hover:bg-white/12 hover:text-white"
             }`}
           >
             <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
@@ -58,13 +58,24 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
 
 function Brand() {
   return (
-    <div className="flex items-center gap-2.5 px-1">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
-        <Anchor className="h-6 w-6 text-white" strokeWidth={2.2} />
+    <div className="flex items-center gap-3 px-1">
+      <div className="relative h-13 w-13 shrink-0 overflow-hidden rounded-full border border-[#f4dfb9]/70 bg-[#ead2a8] shadow-[0_5px_18px_rgba(0,0,0,0.32)]">
+        <Image
+          src="/brand/webdock-logo.webp"
+          alt=""
+          fill
+          sizes="52px"
+          className="object-cover"
+          preload
+        />
       </div>
-      <div>
-        <p className="text-lg font-bold leading-tight text-white">Webドック</p>
-        <p className="text-[11px] leading-tight text-white/55">あなたのWeb健康診断</p>
+      <div className="min-w-0">
+        <p className="text-lg font-bold leading-tight tracking-[0.02em] text-white">
+          Webドック
+        </p>
+        <p className="mt-1 text-[10px] font-medium leading-tight tracking-[0.06em] text-[#f4dfb9]/75">
+          あなたのWeb健康診断
+        </p>
       </div>
     </div>
   );
@@ -79,7 +90,7 @@ function CompanyCard({
 }) {
   return (
     <div className="mt-auto">
-      <div className="rounded-xl bg-white/[0.06] p-3.5 ring-1 ring-white/10">
+      <div className="rounded-xl bg-[#071829]/55 p-3.5 shadow-lg ring-1 ring-white/15 backdrop-blur-sm">
         <button className="flex w-full items-center justify-between gap-2 text-left">
           <span className="truncate text-sm font-bold text-white">{name}</span>
           <ChevronDown className="h-4 w-4 shrink-0 text-white/50" />
@@ -99,6 +110,23 @@ function CompanyCard({
         </button>
       </form>
     </div>
+  );
+}
+
+function SidebarBackdrop() {
+  return (
+    <>
+      <Image
+        src="/brand/sidebar-chart.webp"
+        alt=""
+        fill
+        sizes="(min-width: 1024px) 256px, 288px"
+        className="object-cover object-center"
+      />
+      <div className="absolute inset-0 bg-[#102942]/82 mix-blend-multiply" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#07182a]/55 via-[#102942]/25 to-[#061522]/85" />
+      <div className="absolute inset-y-0 right-0 w-px bg-[#f4dfb9]/20" />
+    </>
   );
 }
 
@@ -126,10 +154,13 @@ export default function Sidebar({
       </button>
 
       {/* デスクトップ: 固定サイドバー */}
-      <aside className="hidden w-64 shrink-0 flex-col gap-7 bg-navy px-4 py-6 lg:flex">
-        <Brand />
-        <NavItems />
-        <CompanyCard name={companyName} plan={plan} />
+      <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy lg:block">
+        <SidebarBackdrop />
+        <div className="relative z-10 flex h-full flex-col gap-7 px-4 py-6">
+          <Brand />
+          <NavItems />
+          <CompanyCard name={companyName} plan={plan} />
+        </div>
       </aside>
 
       {/* モバイル: ドロワー */}
@@ -140,19 +171,22 @@ export default function Sidebar({
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col gap-7 bg-navy px-4 py-6">
-            <div className="flex items-center justify-between">
-              <Brand />
-              <button
-                onClick={() => setOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-white/70 hover:bg-white/10"
-                aria-label="メニューを閉じる"
-              >
-                <X className="h-5 w-5" />
-              </button>
+          <aside className="absolute left-0 top-0 h-full w-72 overflow-hidden bg-navy">
+            <SidebarBackdrop />
+            <div className="relative z-10 flex h-full flex-col gap-7 px-4 py-6">
+              <div className="flex items-center justify-between">
+                <Brand />
+                <button
+                  onClick={() => setOpen(false)}
+                  className="flex h-11 w-11 items-center justify-center rounded-xl text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  aria-label="メニューを閉じる"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <NavItems onNavigate={() => setOpen(false)} />
+              <CompanyCard name={companyName} plan={plan} />
             </div>
-            <NavItems onNavigate={() => setOpen(false)} />
-            <CompanyCard name={companyName} plan={plan} />
           </aside>
         </div>
       )}
