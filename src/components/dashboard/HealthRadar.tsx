@@ -29,7 +29,7 @@ export default function HealthRadar({
           {score}
         </span>
         <span className="mb-1 text-xs text-gray-500">/ 100</span>
-        <span className="mb-1 ml-auto rounded-full bg-emerald-500 px-2.5 py-0.5 text-xs font-semibold text-white">
+        <span className="mb-1 ml-auto rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-white">
           {rankLabel}ランク
         </span>
       </div>

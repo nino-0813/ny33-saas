@@ -9,6 +9,7 @@ const TITLES: Record<string, { title: string; subtitle: string }> = {
   "/reports": { title: "レポート", subtitle: "月次レポートを確認できます" },
   "/tasks": { title: "改善タスク", subtitle: "推奨アクションの一覧" },
   "/sources": { title: "設定・連携", subtitle: "データ連携と各種設定" },
+  "/funnel": { title: "ファネル評価", subtitle: "実データから評価の根拠と改善方法を確認できます" },
   "/consulting": {
     title: "業務・ROI診断",
     subtitle: "売上の流れを分解し、AIを入れるべき場所と投資効果を見つけます",

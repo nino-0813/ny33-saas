@@ -8,7 +8,7 @@ const trendMeta: Record<
   Trend,
   { color: string; pill: string; pillCls: string }
 > = {
-  up: { color: UXB.emerald, pill: "GOOD", pillCls: "bg-emerald-500 text-white" },
+  up: { color: UXB.emerald, pill: "GOOD", pillCls: "bg-primary text-white" },
   down: { color: UXB.orange, pill: "注意", pillCls: "bg-orange-500 text-white" },
   flat: { color: "#9ca3af", pill: "—", pillCls: "bg-gray-200 text-gray-600" },
 };

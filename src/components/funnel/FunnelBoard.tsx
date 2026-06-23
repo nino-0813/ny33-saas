@@ -23,8 +23,8 @@ const BAND_H = 58;
 
 const BANDS: BandMeta[] = [
   { key: "awareness", name: "認知", sub: "知られているか", img: "/funnel/band-awareness.png", w: 372, text: "#0C447C" },
-  { key: "interest", name: "興味", sub: "興味を持たれたか", img: "/funnel/band-interest.png", w: 340, text: "#0F6E56" },
-  { key: "action", name: "行動", sub: "サイトに来たか", img: "/funnel/band-action.png", w: 313, text: "#3B6D11" },
+  { key: "interest", name: "興味", sub: "興味を持たれたか", img: "/funnel/band-interest.png", w: 340, text: "#347F9B" },
+  { key: "action", name: "行動", sub: "サイトに来たか", img: "/funnel/band-action.png", w: 313, text: "#4B96B1" },
   { key: "comparison", name: "比較", sub: "比べてもらえたか", img: "/funnel/band-comparison.png", w: 284, text: "#854F0B" },
   { key: "purchase", name: "購買", sub: "買ってもらえたか", img: "/funnel/band-purchase.png", w: 259, text: "#993C1D" },
   { key: "usage", name: "利用", sub: "使ってもらえたか", img: "/funnel/band-usage.png", w: 234, text: "#8A4F0B" },
@@ -81,10 +81,12 @@ export default function FunnelBoard({
             const leaking = r.rate < LEAK_THRESHOLD;
             return (
               <div key={r.key} className="flex justify-center">
-                <div
-                  className="relative"
+                <Link
+                  href={`/funnel/${r.key}`}
+                  className="group relative rounded-xl outline-none transition-transform duration-200 hover:scale-[1.015] focus-visible:ring-2 focus-visible:ring-[#75bdd3] focus-visible:ring-offset-4"
                   style={{ width: r.w, height: BAND_H }}
                   title={`${r.name}：通過率 ${Math.round(r.rate * 100)}%`}
+                  aria-label={`${r.name}の評価詳細を見る。現在${Math.round(r.rate * 100)}%`}
                 >
                   <Image
                     src={r.img}
@@ -95,7 +97,9 @@ export default function FunnelBoard({
                     style={
                       leaking
                         ? { filter: "saturate(0.35) opacity(0.55)" }
-                        : undefined
+                        : r.key === "interest" || r.key === "action"
+                          ? { filter: "hue-rotate(48deg) saturate(0.78)" }
+                          : undefined
                     }
                   />
                   {/* 通過率 */}
@@ -116,7 +120,8 @@ export default function FunnelBoard({
                       title="ここでお客さんが漏れています"
                     />
                   )}
-                </div>
+                  <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-transparent transition group-hover:ring-[#75bdd3]/60" />
+                </Link>
               </div>
             );
           })}
@@ -140,7 +145,7 @@ export default function FunnelBoard({
               <div className="relative h-7 overflow-hidden rounded-full bg-surface-2">
                 <div
                   className="absolute bottom-0 left-0 top-0 rounded-full transition-[width] duration-1000 ease-out"
-                  style={{ width: `${fill}%`, background: "linear-gradient(90deg,#85B7EB,#5DCAA5)" }}
+                  style={{ width: `${fill}%`, background: "linear-gradient(90deg,#9DD3E3,#4B96B1)" }}
                 />
               </div>
               <p className="mt-1.5 text-xs text-muted">

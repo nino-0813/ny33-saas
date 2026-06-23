@@ -286,7 +286,7 @@ export default function BusinessConsultingStudio() {
             <Card className="overflow-hidden">
               <div className="bg-navy px-5 py-4 text-white">
                 <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-green-400" />
+                  <Target className="h-4 w-4 text-[#8ed0e3]" />
                   <h2 className="text-sm font-bold">最優先で改善する場所</h2>
                 </div>
               </div>
@@ -434,7 +434,7 @@ export default function BusinessConsultingStudio() {
               <p className="text-xs text-white/60">月間の純効果</p>
               <p
                 className={`tnum mt-1 text-3xl font-bold ${
-                  monthlyNet >= 0 ? "text-green-400" : "text-red-300"
+                  monthlyNet >= 0 ? "text-[#8ed0e3]" : "text-red-300"
                 }`}
               >
                 {monthlyNet >= 0 ? "+" : ""}
@@ -602,7 +602,7 @@ function ResultRow({
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-white/60">{label}</span>
-      <span className={`tnum font-bold ${muted ? "text-white/70" : "text-green-400"}`}>
+      <span className={`tnum font-bold ${muted ? "text-white/70" : "text-[#8ed0e3]"}`}>
         {value}
       </span>
     </div>

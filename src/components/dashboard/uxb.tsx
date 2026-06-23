@@ -4,8 +4,8 @@ import { ReactNode } from "react";
 export const UXB = {
   desk: "#c5c3d1",
   canvas: "#f5f4f0",
-  emerald: "#10b981",
-  emeraldDark: "#059669",
+  emerald: "#4b96b1",
+  emeraldDark: "#347f9b",
   yellow: "#facc15",
   orange: "#f97316",
   gray: "#d1d5db",
@@ -90,7 +90,7 @@ export function Ring({
 type PillTone = "good" | "warn" | "bad" | "neutral";
 
 const pillCls: Record<PillTone, string> = {
-  good: "bg-emerald-500 text-white",
+  good: "bg-primary text-white",
   warn: "bg-yellow-400 text-black",
   bad: "bg-orange-500 text-white",
   neutral: "bg-gray-200 text-gray-700",

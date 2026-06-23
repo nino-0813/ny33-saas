@@ -9,9 +9,10 @@ export interface FunnelResult {
   connected: boolean;
   stages?: FunnelStageInput[];
   purchaseMeasured?: boolean; // 購買(purchase/キーイベント)が計測されているか
+  signals?: FunnelSignals;
 }
 
-interface RawSignals {
+export interface FunnelSignals {
   impressions: number;
   ctr: number; // 0..1
   sessions: number;
@@ -33,7 +34,7 @@ const clamp = (x: number) => Math.max(FLOOR, Math.min(1, x));
  * 各段階を最も関連する指標 ÷ 目安値 で評価する（業種横断のヒューリスティック）。
  * 目安値はチューニング可能な定数として明示しておく。
  */
-export function computeStages(s: RawSignals): {
+export function computeStages(s: FunnelSignals): {
   stages: FunnelStageInput[];
   purchaseMeasured: boolean;
 } {
@@ -128,7 +129,7 @@ export async function getFunnelData(): Promise<FunnelResult> {
     ]);
 
     const ev = new Map(events.map((e) => [e.name, e.count]));
-    const { stages, purchaseMeasured } = computeStages({
+    const signals: FunnelSignals = {
       impressions: gsc?.impressions ?? 0,
       ctr: gsc ? gsc.ctr / 100 : 0, // fetchSearchConsoleSummary は % で返す
       sessions: metrics.sessions,
@@ -140,9 +141,10 @@ export async function getFunnelData(): Promise<FunnelResult> {
       beginCheckout: ev.get("begin_checkout") ?? 0,
       purchase: ev.get("purchase") ?? 0,
       hasPurchaseEvent: ev.has("purchase"),
-    });
+    };
+    const { stages, purchaseMeasured } = computeStages(signals);
 
-    return { connected: true, stages, purchaseMeasured };
+    return { connected: true, stages, purchaseMeasured, signals };
   } catch {
     return { connected: false };
   }

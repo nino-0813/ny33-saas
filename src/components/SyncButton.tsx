@@ -37,7 +37,7 @@ export default function SyncButton() {
             <li
               key={o.sourceKey}
               className={`flex items-center gap-1.5 text-xs ${
-                o.ok ? "text-emerald-600" : "text-orange-600"
+                o.ok ? "text-primary" : "text-orange-600"
               }`}
             >
               {o.ok ? (

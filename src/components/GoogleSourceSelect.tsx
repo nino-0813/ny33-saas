@@ -42,7 +42,7 @@ export default function GoogleSourceSelect({
           <select
             name="value"
             defaultValue={currentValue ?? ""}
-            className="h-10 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-sm text-black outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            className="h-10 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
           >
             <option value="" disabled>
               選択してください
@@ -56,7 +56,7 @@ export default function GoogleSourceSelect({
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-500 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-60"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-60"
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             保存して同期
@@ -73,7 +73,7 @@ export default function GoogleSourceSelect({
       {outcome && (
         <p
           className={`mt-2 flex items-center gap-1.5 text-xs ${
-            outcome.ok ? "text-emerald-600" : "text-orange-600"
+            outcome.ok ? "text-primary" : "text-orange-600"
           }`}
         >
           {outcome.ok ? (

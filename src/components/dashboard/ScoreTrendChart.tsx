@@ -85,7 +85,7 @@ export default function ScoreTrendChart({
               strokeWidth={2.5}
               fill="url(#scoreFill)"
               dot={{ r: 3, fill: "#22c55e", strokeWidth: 0 }}
-              activeDot={{ r: 5, fill: "#16a34a" }}
+              activeDot={{ r: 5, fill: "#347f9b" }}
               isAnimationActive={false}
             />
           </AreaChart>

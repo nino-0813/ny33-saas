@@ -108,7 +108,7 @@ export default async function SourcesPage({
         <div
           className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm ${
             STATUS_MSG[googleStatus].ok
-              ? "bg-emerald-50 text-emerald-700"
+              ? "bg-primary-weak text-primary"
               : "bg-orange-50 text-orange-700"
           }`}
         >
@@ -140,7 +140,7 @@ export default async function SourcesPage({
           title="Google 連携（実データ取得）"
           subtitle="GA4・Search Console をあなたの Google アカウントで連携します。"
           action={
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-weak px-3 py-1 text-xs font-semibold text-primary">
               <Zap className="h-3.5 w-3.5" />
               実データ
             </span>
@@ -171,7 +171,7 @@ export default async function SourcesPage({
           <div className="space-y-3">
             <Card className="flex items-center justify-between gap-3 p-4">
               <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                <CheckCircle2 className="h-5 w-5 text-primary" />
                 <span className="text-foreground">
                   連携済み:{" "}
                   <span className="font-semibold">{connection.email || "Google アカウント"}</span>
