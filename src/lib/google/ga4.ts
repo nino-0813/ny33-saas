@@ -119,6 +119,56 @@ export async function fetchGa4Channels(
   });
 }
 
+export interface Ga4FunnelMetrics {
+  sessions: number;
+  totalUsers: number;
+  newUsers: number;
+  engagedSessions: number;
+  keyEvents: number; // CV（キーイベント）
+}
+
+/** ファネル算出に使う GA4 の主要メトリクス（直近28日） */
+export async function fetchGa4Funnel(
+  accessToken: string,
+  propertyId: string,
+): Promise<Ga4FunnelMetrics> {
+  const id = propertyId.replace(/[^0-9]/g, "");
+  if (!id) throw new Error("GA4 のプロパティID（数値）が正しくありません");
+
+  const res = await fetch(
+    `https://analyticsdata.googleapis.com/v1beta/properties/${id}:runReport`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        dateRanges: [{ startDate: "28daysAgo", endDate: "yesterday" }],
+        metrics: [
+          { name: "sessions" },
+          { name: "totalUsers" },
+          { name: "newUsers" },
+          { name: "engagedSessions" },
+          { name: "keyEvents" },
+        ],
+      }),
+      cache: "no-store",
+    },
+  );
+  const data: RunReportResponse = await res.json();
+  if (!res.ok) throw new Error(translateGoogleError(res.status, data?.error?.message));
+  const v = data.rows?.[0]?.metricValues ?? [];
+  const n = (i: number) => Math.round(Number(v[i]?.value ?? 0));
+  return {
+    sessions: n(0),
+    totalUsers: n(1),
+    newUsers: n(2),
+    engagedSessions: n(3),
+    keyEvents: n(4),
+  };
+}
+
 export interface Ga4Event {
   name: string;
   count: number;

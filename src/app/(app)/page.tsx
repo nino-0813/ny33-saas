@@ -17,13 +17,15 @@ import FunnelBoard from "@/components/funnel/FunnelBoard";
 import { getDashboardData } from "@/lib/queries";
 import { getCurrentGoal } from "@/lib/goals-data";
 import { getLiveMetrics } from "@/lib/live-metrics";
+import { getFunnelData } from "@/lib/funnel-data";
 import type { Kpi, AiIssue } from "@/lib/mock";
 
 export default async function HomePage() {
-  const [data, goal, live] = await Promise.all([
+  const [data, goal, live, funnel] = await Promise.all([
     getDashboardData(),
     getCurrentGoal(),
     getLiveMetrics(),
+    getFunnelData(),
   ]);
   if (!data) redirect("/onboarding");
 
@@ -50,7 +52,7 @@ export default async function HomePage() {
       </div>
 
       {/* 集客ファネル（主役） */}
-      <FunnelBoard />
+      <FunnelBoard stages={funnel.connected ? funnel.stages : undefined} />
 
       {/* AIの今日の一手 */}
       <DailyFocus />
