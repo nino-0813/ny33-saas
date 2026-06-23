@@ -43,12 +43,12 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             aria-current={active ? "page" : undefined}
             className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors duration-150 ${
               active
-                ? "bg-parchment text-navy shadow-[0_4px_12px_-6px_rgba(15,31,51,0.25)] ring-1 ring-gold/45"
-                : "text-muted hover:bg-surface-2 hover:text-foreground"
+                ? "bg-primary-weak text-[#286d87] shadow-[0_5px_14px_-8px_rgba(31,105,132,0.45)] ring-1 ring-primary/40"
+                : "text-muted hover:bg-primary-weak/45 hover:text-[#347f9b]"
             }`}
           >
             {active && (
-              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold" />
+              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-primary" />
             )}
             <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
             <span className="flex-1">{item.label}</span>
@@ -93,7 +93,7 @@ function CompanyCard({
 }) {
   return (
     <div className="mt-auto">
-      <div className="rounded-xl bg-surface-2 p-3.5 ring-1 ring-border">
+      <div className="rounded-xl bg-primary-weak/35 p-3.5 ring-1 ring-primary/15">
         <button className="flex w-full items-center justify-between gap-2 text-left">
           <span className="truncate text-sm font-bold text-foreground">{name}</span>
           <ChevronDown className="h-4 w-4 shrink-0 text-muted" />
@@ -106,7 +106,7 @@ function CompanyCard({
       <form action={signOut} className="mt-2">
         <button
           type="submit"
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-primary-weak/45 hover:text-[#347f9b]"
         >
           <LogOut className="h-4 w-4" />
           ログアウト
@@ -119,9 +119,9 @@ function CompanyCard({
 function SidebarBackdrop() {
   return (
     <>
-      {/* 真っ白な面 ＋ 右端にゴールドのヘアライン */}
+      {/* 真っ白な面 ＋ 右端に水色のヘアライン */}
       <div className="absolute inset-0 bg-surface" />
-      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-gold/40 to-transparent" />
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/45 to-transparent" />
       <div className="absolute inset-y-0 right-0 w-px bg-border" />
     </>
   );
@@ -144,7 +144,7 @@ export default function Sidebar({
       {/* モバイル: 開閉ボタン */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-xl bg-navy text-white shadow-md lg:hidden"
+        className="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white shadow-md lg:hidden"
         aria-label="メニューを開く"
       >
         <Menu className="h-5 w-5" />
@@ -175,7 +175,7 @@ export default function Sidebar({
                 <Brand />
                 <button
                   onClick={() => setOpen(false)}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-primary-weak/45 hover:text-[#347f9b]"
                   aria-label="メニューを閉じる"
                 >
                   <X className="h-5 w-5" />
