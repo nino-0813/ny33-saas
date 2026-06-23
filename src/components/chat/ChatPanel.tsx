@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Send, Sparkles } from "lucide-react";
+import { BarChart3, Loader2, Send, Sparkles } from "lucide-react";
+import type { FunnelChatFocus } from "@/lib/funnel-insights";
 
 type Role = "user" | "assistant";
 interface Message {
@@ -16,7 +17,7 @@ const SUGGESTIONS = [
   "今月の目標を一緒に立てたい",
 ];
 
-export default function ChatPanel() {
+export default function ChatPanel({ focus }: { focus?: FunnelChatFocus }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -41,7 +42,7 @@ export default function ChatPanel() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, topic: focus?.key }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
@@ -86,21 +87,61 @@ export default function ChatPanel() {
             <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-weak text-primary">
               <Sparkles className="h-6 w-6" />
             </span>
-            <p className="text-sm font-bold text-foreground">
-              Web集客のことなら何でも聞いてください
-            </p>
-            <p className="mt-1 text-xs text-muted">
-              あなたのサイトのデータを踏まえて、今日やることを提案します。
-            </p>
+            {focus ? (
+              <>
+                <div className="mb-4 w-full max-w-lg rounded-2xl border border-primary/25 bg-primary-weak/45 p-4 text-left">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                      <BarChart3 className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-primary">
+                        {focus.name}の評価を引き継ぎました
+                      </p>
+                      <p className="mt-0.5 text-sm font-bold text-foreground">
+                        {focus.actual}
+                        <span className="ml-2 text-xs text-muted">
+                          目安：{focus.target}
+                        </span>
+                      </p>
+                    </div>
+                    <span className="tnum text-2xl font-bold text-primary">
+                      {focus.score}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-muted">
+                    {focus.interpretation}
+                  </p>
+                </div>
+                <p className="text-sm font-bold text-foreground">
+                  知りたいことを選んでください
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  このサイトの実データを踏まえて回答します。
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-bold text-foreground">
+                  Web集客のことなら何でも聞いてください
+                </p>
+                <p className="mt-1 text-xs text-muted">
+                  あなたのサイトのデータを踏まえて、今日やることを提案します。
+                </p>
+              </>
+            )}
             <div className="mt-5 grid w-full max-w-lg gap-2 sm:grid-cols-2">
-              {SUGGESTIONS.map((s) => (
+              {(focus?.questions ?? SUGGESTIONS).map((s, index) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => send(s)}
-                  className="rounded-xl border border-border bg-surface-2/50 px-3 py-2.5 text-left text-xs text-foreground transition-colors hover:border-primary/40 hover:bg-primary-weak/40"
+                  className="group flex min-h-16 items-start gap-2.5 rounded-xl border border-border bg-surface px-3 py-3 text-left text-xs leading-5 text-foreground transition-colors hover:border-primary/50 hover:bg-primary-weak/35"
                 >
-                  {s}
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-weak text-[10px] font-bold text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                    {index + 1}
+                  </span>
+                  <span>{s}</span>
                 </button>
               ))}
             </div>

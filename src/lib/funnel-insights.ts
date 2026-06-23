@@ -26,6 +26,16 @@ export interface FunnelInsight {
   resources: { title: string; source: string; date?: string; href: string }[];
 }
 
+export interface FunnelChatFocus {
+  key: FunnelKey;
+  name: string;
+  score: number;
+  actual: string;
+  target: string;
+  interpretation: string;
+  questions: string[];
+}
+
 export function isFunnelKey(value: string): value is FunnelKey {
   return FUNNEL_KEYS.includes(value as FunnelKey);
 }
@@ -269,4 +279,70 @@ export function getFunnelInsight(
   };
 
   return insights[key];
+}
+
+export function getFunnelChatQuestions(key: FunnelKey): string[] {
+  const questions: Record<FunnelKey, string[]> = {
+    awareness: [
+      "検索表示を増やすために、最初に改善すべきページはどれですか？",
+      "狙うべき検索キーワードを優先順位付きで教えてください",
+      "今あるページを使って認知を増やす具体的な方法は？",
+      "今週できる認知改善の作業を3つに絞ってください",
+    ],
+    interest: [
+      "クリック率が低い原因を、今のデータから説明してください",
+      "検索タイトルと説明文をどう直せば選ばれやすくなりますか？",
+      "クリック率を上げやすいページを優先順位付きで教えてください",
+      "改善効果を確認するために、何をどう測ればいいですか？",
+    ],
+    action: [
+      "訪問後に離脱されている原因を、今の数値から考えてください",
+      "ファーストビューで最初に直すべき内容は何ですか？",
+      "問い合わせや詳細ページへ進みやすい導線を提案してください",
+      "今週できる行動率改善を3つに絞ってください",
+    ],
+    comparison: [
+      "商品・サービス詳細へ進まない原因を整理してください",
+      "比較検討に必要な情報で、今のサイトに足りないものは？",
+      "料金・事例・違いをどの順番で見せるべきですか？",
+      "商品閲覧率を上げるためのページ構成を提案してください",
+    ],
+    purchase: [
+      "購入や問い合わせ完了までの離脱原因を整理してください",
+      "購入計測が正しく設定されているか確認する手順を教えてください",
+      "購入前の不安を減らすために追加すべき情報は何ですか？",
+      "完了率を上げる施策を効果が高い順に教えてください",
+    ],
+    usage: [
+      "リピーターが少ない原因を、今の状態から考えてください",
+      "再訪してもらうために提供すべきコンテンツは何ですか？",
+      "メール・LINE・SNSのどれを優先すべきですか？",
+      "リピート率改善のための30日プランを作ってください",
+    ],
+    loyalty: [
+      "ファン化を測るために追加すべき指標を教えてください",
+      "口コミや紹介を増やす具体的な仕組みを提案してください",
+      "既存顧客との関係を深めるコンテンツ案を出してください",
+      "ファン化施策を小さく始める30日プランを作ってください",
+    ],
+  };
+
+  return questions[key];
+}
+
+export function buildFunnelChatFocus(
+  key: FunnelKey,
+  score: number,
+  signals?: FunnelSignals,
+): FunnelChatFocus {
+  const insight = getFunnelInsight(key, signals);
+  return {
+    key,
+    name: insight.name,
+    score,
+    actual: insight.actual,
+    target: insight.target,
+    interpretation: insight.interpretation,
+    questions: getFunnelChatQuestions(key),
+  };
 }
