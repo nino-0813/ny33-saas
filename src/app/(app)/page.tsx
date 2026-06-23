@@ -13,6 +13,7 @@ import {
 import ScoreTrendChart from "@/components/dashboard/ScoreTrendChart";
 import DailyFocus from "@/components/dashboard/DailyFocus";
 import GoalCard from "@/components/dashboard/GoalCard";
+import FunnelBoard from "@/components/funnel/FunnelBoard";
 import { getDashboardData } from "@/lib/queries";
 import { getCurrentGoal } from "@/lib/goals-data";
 import { getLiveMetrics } from "@/lib/live-metrics";
@@ -47,6 +48,9 @@ export default async function HomePage() {
           今日のWeb集客の状況と、やるべきことをまとめました。
         </p>
       </div>
+
+      {/* 集客ファネル（主役） */}
+      <FunnelBoard />
 
       {/* AIの今日の一手 */}
       <DailyFocus />
