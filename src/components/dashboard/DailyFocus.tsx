@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Sparkles, ArrowUpRight, Loader2 } from "lucide-react";
+import { Sparkles, ArrowUpRight, Loader2, WandSparkles } from "lucide-react";
 
 const PROMPT =
   "今日のWeb集客で最優先でやるべき一手を、提供データを踏まえて1つだけ提案してください。" +
@@ -11,36 +11,42 @@ const PROMPT =
 export default function DailyFocus() {
   const [text, setText] = useState("");
   const [done, setDone] = useState(false);
-  const started = useRef(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-
-    (async () => {
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [{ role: "user", content: PROMPT }] }),
-        });
-        if (!res.ok || !res.body) throw new Error();
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let acc = "";
-        for (;;) {
-          const { done: d, value } = await reader.read();
-          if (d) break;
-          acc += decoder.decode(value, { stream: true });
-          setText(acc);
-        }
-      } catch {
-        setText("今日も一歩ずつ。まずは集客チャットで現状を聞いてみましょう。");
-      } finally {
-        setDone(true);
+  async function generate() {
+    if (pending || text) return;
+    setPending(true);
+    setDone(false);
+    setError("");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: [{ role: "user", content: PROMPT }] }),
+      });
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "AI提案を生成できませんでした。");
       }
-    })();
-  }, []);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      for (;;) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        acc += decoder.decode(value, { stream: true });
+        setText(acc);
+      }
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "AI提案を生成できませんでした。",
+      );
+    } finally {
+      setDone(true);
+      setPending(false);
+    }
+  }
 
   return (
     <section className="relative overflow-hidden rounded-3xl border border-[#b9dce8] bg-surface p-5 shadow-[0_2px_8px_rgba(15,31,51,0.05),0_16px_36px_-20px_rgba(31,105,132,0.24)] sm:p-6">
@@ -77,29 +83,51 @@ export default function DailyFocus() {
               {text}
               {!done && <span className="ml-0.5 animate-pulse text-[#4b96b1]">▍</span>}
             </p>
-          ) : (
+          ) : pending ? (
             <div className="flex min-h-[4.5rem] items-center gap-3 text-sm font-medium text-muted">
               <Loader2 className="h-5 w-5 animate-spin text-[#4b96b1]" />
-              今日のデータから、優先アクションを考えています
+              今日の実データから、優先アクションを生成しています
+            </div>
+          ) : (
+            <div className="flex min-h-[4.5rem] flex-col items-start justify-center gap-3">
+              <p className="text-sm leading-6 text-muted">
+                必要な時だけAIを使い、サイトの最新データから今日やるべきことを1つ提案します。
+              </p>
+              <button
+                type="button"
+                onClick={generate}
+                className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#347f9b]"
+              >
+                <WandSparkles className="h-4 w-4" />
+                AIで今日の一手を生成
+              </button>
             </div>
           )}
         </div>
 
-        <div className="mt-5 flex items-center justify-between gap-4 border-t border-border/80 pt-4">
-          <p className="hidden text-xs text-muted sm:block">
-            集客チャットで具体的な進め方を確認できます
+        {error && (
+          <p role="alert" className="mt-4 rounded-xl bg-bad-weak px-3 py-2 text-xs text-bad">
+            {error}
           </p>
-          <Link
-            href="/chat"
-            className="group ml-auto inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#4b96b1] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_18px_-9px_rgba(31,105,132,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#347f9b] hover:shadow-[0_11px_24px_-10px_rgba(31,105,132,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75bdd3] focus-visible:ring-offset-2"
-          >
-            この提案を相談する
-            <ArrowUpRight
-              className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              strokeWidth={2}
-            />
-          </Link>
-        </div>
+        )}
+
+        {text && (
+          <div className="mt-5 flex items-center justify-between gap-4 border-t border-border/80 pt-4">
+            <p className="hidden text-xs text-muted sm:block">
+              集客チャットで具体的な進め方を確認できます
+            </p>
+            <Link
+              href="/chat"
+              className="group ml-auto inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#4b96b1] px-4 py-2.5 text-sm font-bold text-white shadow-[0_7px_18px_-9px_rgba(31,105,132,0.75)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#347f9b] hover:shadow-[0_11px_24px_-10px_rgba(31,105,132,0.8)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#75bdd3] focus-visible:ring-offset-2"
+            >
+              この提案を相談する
+              <ArrowUpRight
+                className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                strokeWidth={2}
+              />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
