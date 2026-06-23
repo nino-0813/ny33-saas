@@ -62,17 +62,9 @@ export default function FunnelBoard({
   }, [fillTarget]);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border bg-surface p-5 shadow-sm sm:p-7">
-      {/* 航海図の背景（うっすら・船をドックに入れる世界観） */}
-      <Image
-        src="/funnel/chart-bg.png"
-        alt=""
-        aria-hidden
-        fill
-        sizes="800px"
-        className="pointer-events-none object-cover opacity-[0.07]"
-        priority={false}
-      />
+    <div className="relative overflow-hidden rounded-3xl border border-border bg-surface shadow-[0_2px_8px_rgba(15,31,51,0.05),0_12px_32px_-12px_rgba(15,31,51,0.12)] p-5 sm:p-7">
+      {/* 上端のゴールドのアクセントライン（航海図ブランド） */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
 
       <div className="relative">
         {/* 見出し */}

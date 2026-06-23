@@ -28,10 +28,23 @@ export default async function AppLayout({
     <div className="flex min-h-dvh bg-background">
       <Sidebar email={user.email} companyName={companyName} plan={plan} />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header userLabel={user.email ?? "ユーザー"} lastChecked={summary.lastCheckedAt} />
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        {/* 海図を薄く敷いた羊皮紙風の背景（カードが主役・地図は余白で効かせる） */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-cover bg-top opacity-[0.10]"
+          style={{ backgroundImage: "url('/brand/sidebar-chart.webp')" }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-parchment/70 via-background/80 to-background/95"
+        />
 
-        <main className="flex-1 px-5 pb-8 lg:px-8">{children}</main>
+        <div className="relative z-10 flex min-h-dvh flex-col">
+          <Header userLabel={user.email ?? "ユーザー"} lastChecked={summary.lastCheckedAt} />
+
+          <main className="flex-1 px-5 pb-8 lg:px-8">{children}</main>
+        </div>
       </div>
     </div>
   );

@@ -41,12 +41,15 @@ function NavItems({ onNavigate }: { onNavigate?: () => void }) {
             href={item.href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`group flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors duration-150 ${
+            className={`group relative flex min-h-11 items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-semibold transition-colors duration-150 ${
               active
-                ? "bg-[#f4dfb9]/95 text-[#102942] shadow-[0_8px_24px_rgba(3,17,31,0.22)] ring-1 ring-white/35"
-                : "text-white/75 hover:bg-white/12 hover:text-white"
+                ? "bg-parchment text-navy shadow-[0_4px_12px_-6px_rgba(15,31,51,0.25)] ring-1 ring-gold/45"
+                : "text-muted hover:bg-surface-2 hover:text-foreground"
             }`}
           >
+            {active && (
+              <span className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-gold" />
+            )}
             <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
             <span className="flex-1">{item.label}</span>
           </Link>
@@ -70,10 +73,10 @@ function Brand() {
         />
       </div>
       <div className="min-w-0">
-        <p className="text-lg font-bold leading-tight tracking-[0.02em] text-white">
+        <p className="text-lg font-bold leading-tight tracking-[0.02em] text-foreground">
           Webドック
         </p>
-        <p className="mt-1 text-[10px] font-medium leading-tight tracking-[0.06em] text-[#f4dfb9]/75">
+        <p className="mt-1 text-[10px] font-medium leading-tight tracking-[0.06em] text-muted">
           あなたのWeb健康診断
         </p>
       </div>
@@ -90,12 +93,12 @@ function CompanyCard({
 }) {
   return (
     <div className="mt-auto">
-      <div className="rounded-xl bg-[#071829]/55 p-3.5 shadow-lg ring-1 ring-white/15 backdrop-blur-sm">
+      <div className="rounded-xl bg-surface-2 p-3.5 ring-1 ring-border">
         <button className="flex w-full items-center justify-between gap-2 text-left">
-          <span className="truncate text-sm font-bold text-white">{name}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-white/50" />
+          <span className="truncate text-sm font-bold text-foreground">{name}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 text-muted" />
         </button>
-        <div className="mt-2 space-y-0.5 text-[11px] text-white/55">
+        <div className="mt-2 space-y-0.5 text-[11px] text-muted">
           <p>契約プラン：{plan}プラン</p>
           <p>契約期間：2026/12/31まで</p>
         </div>
@@ -103,7 +106,7 @@ function CompanyCard({
       <form action={signOut} className="mt-2">
         <button
           type="submit"
-          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
         >
           <LogOut className="h-4 w-4" />
           ログアウト
@@ -116,16 +119,10 @@ function CompanyCard({
 function SidebarBackdrop() {
   return (
     <>
-      <Image
-        src="/brand/sidebar-chart.webp"
-        alt=""
-        fill
-        sizes="(min-width: 1024px) 256px, 288px"
-        className="object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-[#102942]/82 mix-blend-multiply" />
-      <div className="absolute inset-0 bg-gradient-to-b from-[#07182a]/55 via-[#102942]/25 to-[#061522]/85" />
-      <div className="absolute inset-y-0 right-0 w-px bg-[#f4dfb9]/20" />
+      {/* 真っ白な面 ＋ 右端にゴールドのヘアライン */}
+      <div className="absolute inset-0 bg-surface" />
+      <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-gold/40 to-transparent" />
+      <div className="absolute inset-y-0 right-0 w-px bg-border" />
     </>
   );
 }
@@ -154,7 +151,7 @@ export default function Sidebar({
       </button>
 
       {/* デスクトップ: 固定サイドバー */}
-      <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-navy lg:block">
+      <aside className="relative hidden w-64 shrink-0 overflow-hidden bg-surface lg:block">
         <SidebarBackdrop />
         <div className="relative z-10 flex h-full flex-col gap-7 px-4 py-6">
           <Brand />
@@ -171,14 +168,14 @@ export default function Sidebar({
             onClick={() => setOpen(false)}
             aria-hidden
           />
-          <aside className="absolute left-0 top-0 h-full w-72 overflow-hidden bg-navy">
+          <aside className="absolute left-0 top-0 h-full w-72 overflow-hidden bg-surface">
             <SidebarBackdrop />
             <div className="relative z-10 flex h-full flex-col gap-7 px-4 py-6">
               <div className="flex items-center justify-between">
                 <Brand />
                 <button
                   onClick={() => setOpen(false)}
-                  className="flex h-11 w-11 items-center justify-center rounded-xl text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
                   aria-label="メニューを閉じる"
                 >
                   <X className="h-5 w-5" />
